@@ -6,7 +6,8 @@ class MockPaymentInvoice extends Record
 {
     protected function casts(): array
     {
-        return ['expires_at' => 'datetime', 'paid_at' => 'datetime', 'submitted_at' => 'datetime', 'reviewed_at' => 'datetime', 'amount' => 'integer'];
+        return ['expires_at' => 'datetime', 'paid_at' => 'datetime', 'submitted_at' => 'datetime', 'reviewed_at' => 'datetime',
+            'amount' => 'integer', 'transfer_amount' => 'integer', 'unique_code' => 'integer', 'reserved_unique_code' => 'integer'];
     }
 
     public function user()

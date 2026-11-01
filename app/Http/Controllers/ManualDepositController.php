@@ -16,11 +16,11 @@ class ManualDepositController extends Controller
         $data = $request->validate([
             'reference' => 'required|string|min:3|max:100',
             'note' => 'nullable|string|max:500',
-            'transfer_proof' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
+            'transfer_proof' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
         ]);
-        $service->submit($invoice, $request->user(), $data['reference'], $data['note'] ?? null, $data['transfer_proof']);
+        $service->submit($invoice, $request->user(), $data['reference'], $data['note'] ?? null, $data['transfer_proof'] ?? null);
 
-        return back()->with('status', 'Bukti transfer dikirim ke admin. Saldo bertambah setelah verifikasi disetujui.');
+        return back()->with('status', 'Konfirmasi transfer dikirim ke admin. Saldo bertambah setelah verifikasi disetujui.');
     }
 
     public function proof(MockPaymentInvoice $invoice)

@@ -8,12 +8,15 @@
 <div class="checkout-grid">
     <section class="panel checkout-main">
         <div class="panel-heading"><h2>Transfer & konfirmasi</h2><x-status :value="$invoice->status"/></div>
-        <div class="checkout-amount"><small>Total yang harus ditransfer</small><strong>{{ \App\Support\Money::rupiah($invoice->amount) }}</strong><span>TRANSFER BANK · VERIFIKASI MANUAL</span></div>
+        <div class="checkout-amount"><small>Total yang harus ditransfer</small><strong>{{ \App\Support\Money::rupiah($invoice->transfer_amount ?? $invoice->amount) }}</strong><span>TRANSFER BANK · VERIFIKASI MANUAL</span></div>
+        @if($invoice->unique_code !== null)
+            <div class="padded-panel"><div class="notice">Transfer tepat sesuai total di atas, termasuk kode unik <b>{{ str_pad((string) $invoice->unique_code, 3, '0', STR_PAD_LEFT) }}</b>. Nominal deposit {{ \App\Support\Money::rupiah($invoice->amount) }} + tambahan identifikasi {{ \App\Support\Money::rupiah($invoice->transfer_amount - $invoice->amount) }}. Saldo yang masuk wallet adalah {{ \App\Support\Money::rupiah($invoice->amount) }}.</div></div>
+        @endif
         @if($invoice->status==='pending')
             <div class="padded-panel">
                 <h2>1. Transfer ke rekening tujuan</h2>
                 @include('payments.bank-account')
-                <ol class="local-deposit-steps"><li>Transfer sesuai nominal deposit di atas.</li><li>Simpan bukti transfer dari aplikasi bank atau ATM.</li><li>Unggah bukti di bawah, lalu kirim untuk verifikasi admin.</li></ol>
+                <ol class="local-deposit-steps"><li>Transfer tepat sesuai total di atas, termasuk tiga digit unik.</li><li>Isi nama pengirim atau referensi transfer. Bukti transfer boleh dilampirkan jika tersedia.</li><li>Kirim konfirmasi di bawah untuk verifikasi admin.</li></ol>
             </div>
         @endif
         @can('submit',$invoice)
@@ -21,19 +24,19 @@
                 @if($invoice->expires_at->isPast())
                     <div class="padded-panel"><div class="error-summary">Batas pengiriman telah lewat. Buat pengajuan baru atau hubungi admin jika sudah transfer.</div></div>
                 @else
-                    <form method="post" action="/payments/{{ $invoice->id }}/submit" enctype="multipart/form-data" class="stack padded-panel" data-confirm="Kirim bukti transfer untuk verifikasi admin?">
+                    <form method="post" action="/payments/{{ $invoice->id }}/submit" enctype="multipart/form-data" class="stack padded-panel" data-confirm="Kirim konfirmasi transfer untuk verifikasi admin?">
                         @csrf
-                        <h2>2. Unggah bukti transfer</h2>
+                        <h2>2. Konfirmasi transfer</h2>
                         <x-field name="reference" label="Nama pengirim / referensi transfer" required minlength="3" maxlength="100" placeholder="Nama pemilik rekening pengirim atau nomor referensi"/>
-                        <label class="field"><span>Bukti transfer</span><input type="file" name="transfer_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required aria-describedby="transfer-proof-help">@error('transfer_proof')<small class="field-error">{{ $message }}</small>@enderror</label>
-                        <small id="transfer-proof-help" class="muted">Format JPG, PNG, WEBP, atau PDF. Maksimal 2 MB. Pastikan nominal, rekening tujuan, dan waktu transfer terbaca.</small>
+                        <label class="field"><span>Bukti transfer (opsional)</span><input type="file" name="transfer_proof" accept="image/jpeg,image/png,image/webp,application/pdf" aria-describedby="transfer-proof-help">@error('transfer_proof')<small class="field-error">{{ $message }}</small>@enderror</label>
+                        <small id="transfer-proof-help" class="muted">Boleh dikosongkan. Jika dilampirkan: JPG, PNG, WEBP, atau PDF, maksimal 2 MB. Pastikan nominal, rekening tujuan, dan waktu transfer terbaca.</small>
                         <x-field name="note" label="Catatan untuk admin (opsional)" maxlength="500"/>
-                        <div class="notice">Saldo masuk setelah admin memeriksa bukti transfer dan menyetujui deposit.</div>
-                        <button class="btn btn-primary btn-full">Kirim bukti transfer <x-icon name="arrow"/></button>
+                        <div class="notice">Saldo masuk setelah admin mencocokkan transfer dengan mutasi rekening dan menyetujui deposit.</div>
+                        <button class="btn btn-primary btn-full">Kirim konfirmasi transfer <x-icon name="arrow"/></button>
                     </form>
                 @endif
             @elseif($invoice->status==='awaiting_review')
-                <div class="padded-panel"><div class="notice">Bukti transfer sudah dikirim. Menunggu verifikasi admin sebelum saldo ditambahkan.</div></div>
+                <div class="padded-panel"><div class="notice">Konfirmasi transfer sudah dikirim. Menunggu verifikasi admin sebelum saldo ditambahkan.</div></div>
             @endif
             @if(in_array($invoice->status,['pending','awaiting_review']))
                 <form method="post" action="/payments/{{ $invoice->id }}/cancel" class="padded-panel" data-confirm="Batalkan pengajuan deposit ini? Jika sudah transfer, hubungi admin sebelum membatalkan.">@csrf<button class="btn btn-secondary btn-full">Batalkan pengajuan</button></form>
@@ -47,17 +50,22 @@
                 @endif
                 <a href="{{ route('payments.proof',$invoice) }}" class="btn btn-secondary btn-full" target="_blank" rel="noopener"><x-icon name="file"/>Buka bukti transfer</a>
             </div>
+        @elseif($invoice->submitted_at)
+            <div class="padded-panel"><p class="muted">Bukti transfer tidak dilampirkan (opsional). Verifikasi dilakukan berdasarkan mutasi rekening.</p></div>
         @endif
     </section>
     <aside class="panel checkout-side">
         <h2>Detail deposit</h2>
         <dl>
             <dt>Nomor deposit</dt><dd class="break-all">{{ $invoice->number }}</dd>
+            <dt>Nominal deposit / saldo wallet</dt><dd>{{ \App\Support\Money::rupiah($invoice->amount) }}</dd>
+            <dt>Kode unik</dt><dd>{{ $invoice->unique_code !== null ? str_pad((string) $invoice->unique_code, 3, '0', STR_PAD_LEFT) : 'Tanpa kode (pengajuan lama)' }}</dd>
+            <dt>Total transfer</dt><dd>{{ \App\Support\Money::rupiah($invoice->transfer_amount ?? $invoice->amount) }}</dd>
             <dt>Dibuat</dt><dd>{{ $invoice->created_at->format('d M Y H:i') }} WIB</dd>
-            <dt>Batas kirim bukti</dt><dd>{{ $invoice->expires_at->format('d M Y H:i') }} WIB</dd>
+            <dt>Batas konfirmasi transfer</dt><dd>{{ $invoice->expires_at->format('d M Y H:i') }} WIB</dd>
             <dt>Pengirim / referensi</dt><dd>{{ $invoice->submission_reference ?? 'Belum dikirim' }}</dd>
             <dt>Catatan member</dt><dd>{{ $invoice->submission_note ?: '—' }}</dd>
-            <dt>Bukti dikirim</dt><dd>{{ $invoice->submitted_at?->format('d M Y H:i') ?? 'Belum' }}</dd>
+            <dt>Konfirmasi dikirim</dt><dd>{{ $invoice->submitted_at?->format('d M Y H:i') ?? 'Belum' }}</dd>
             <dt>Ditinjau oleh</dt><dd>{{ $invoice->reviewer?->name ?? 'Belum ditinjau' }}</dd>
             <dt>Waktu tinjauan</dt><dd>{{ $invoice->reviewed_at?->format('d M Y H:i') ?? 'Belum' }}</dd>
             <dt>Catatan admin</dt><dd>{{ $invoice->review_note ?: '—' }}</dd>
@@ -65,8 +73,8 @@
         </dl>
         @can('manage')
             @if($invoice->status==='awaiting_review')
-                <div class="notice">Cocokkan bukti dengan mutasi rekening sebelum menyetujui deposit.</div>
-                <form method="post" action="/payments/{{ $invoice->id }}/review" class="stack" data-confirm="Bukti dan mutasi rekening sudah sesuai? Setujui deposit dan tambahkan saldo?">@csrf @method('patch')<input type="hidden" name="decision" value="approved"><x-field name="review_note" label="Catatan persetujuan (opsional)" maxlength="500"/><button class="btn btn-primary btn-full">Setujui deposit</button></form>
+                <div class="notice">Cocokkan total transfer {{ \App\Support\Money::rupiah($invoice->transfer_amount ?? $invoice->amount) }}, nama pengirim, dan mutasi rekening sebelum menyetujui. Bukti transfer opsional.</div>
+                <form method="post" action="/payments/{{ $invoice->id }}/review" class="stack" data-confirm="Total transfer dan mutasi rekening sudah sesuai? Setujui deposit dan tambahkan saldo?">@csrf @method('patch')<input type="hidden" name="decision" value="approved"><x-field name="review_note" label="Catatan persetujuan (opsional)" maxlength="500"/><button class="btn btn-primary btn-full">Setujui deposit</button></form>
                 <form method="post" action="/payments/{{ $invoice->id }}/review" class="stack local-rejection-form" data-confirm="Tolak pengajuan ini? Saldo tidak akan ditambahkan.">@csrf @method('patch')<input type="hidden" name="decision" value="rejected"><x-field name="review_note" label="Alasan penolakan" required maxlength="500"/><button class="btn btn-danger-soft btn-full">Tolak deposit</button></form>
             @endif
         @endcan

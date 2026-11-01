@@ -46,6 +46,7 @@ class InvestmentService
             app(LedgerService::class)->post($s, 'investment:'.$i->id, 'investment', 'Aktivasi '.$i->package_name,
                 [['wallet:'.$user->id.':available', 'debit', $amount], ['capital', 'credit', $amount],
                     [$s->isLocal() ? 'wallet-offset' : 'cash', 'debit', $amount], ['reserve', 'credit', $amount]], $user->id);
+            app(ProductTurnoverService::class)->record($i);
             $user->notify(new SimulationNotification('Produk Investasi simulasi aktif', $i->package_name.' telah masuk portofolio.', '/investments/'.$i->id));
             app(AuditService::class)->record('investment.opened', $i, null, $i->toArray(), $s->id);
 

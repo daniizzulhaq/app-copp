@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\RoiPackage;
-use App\Services\DashboardService;
 use App\Services\DailyRoiClaimService;
+use App\Services\DashboardService;
+use App\Services\ProductTurnoverService;
 use App\Services\ScenarioContext;
 use App\Services\WalletService;
 use App\Services\WorkspaceClock;
@@ -42,6 +43,8 @@ class DashboardController extends Controller
             return view('member.dashboard', array_merge($data, compact('s', 'from', 'to', 'range', 'staff', 'wallet', 'featuredPackages', 'memberInvestments', 'claimScenario', 'roiClaims')));
         }
 
-        return view('dashboard', array_merge($data, compact('s', 'from', 'to', 'range', 'staff', 'wallet')));
+        $turnover = $s->isLocal() ? app(ProductTurnoverService::class)->report($s, $from, $to) : null;
+
+        return view('dashboard', array_merge($data, compact('s', 'from', 'to', 'range', 'staff', 'wallet', 'turnover')));
     }
 }

@@ -32,7 +32,7 @@ class PaymentController extends Controller
             $r->validate(['method' => 'required|in:manual_local']);
             $i = app(ManualDepositService::class)->create($r->user(), $s, (int) $r->amount, $r->request_key);
 
-            return redirect('/payments/'.$i->id)->with('status', 'Deposit dibuat. Transfer sesuai nominal, lalu unggah bukti transfer untuk verifikasi admin.');
+            return redirect('/payments/'.$i->id)->with('status', 'Deposit dibuat. Transfer sesuai total dengan kode unik, lalu konfirmasi ke admin. Bukti transfer opsional.');
         }
         $i = $service->create($r->user(), $s, (int) $r->amount, $r->method, $r->request_key);
 

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\MockPaymentInvoice;
 use App\Models\SimulationScenario;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Notifications\SimulationNotification;
 use App\Support\Money;
@@ -34,23 +35,27 @@ class ManualDepositService
             if ($amount < 10000 || $amount > 1000000000) {
                 throw ValidationException::withMessages(['amount' => 'Nominal harus antara Rp10.000 dan Rp1.000.000.000.']);
             }
+            $code = $this->reserveUniqueCode($amount);
+            $extra = ($code - $amount % 1000 + 1000) % 1000;
             $invoice = MockPaymentInvoice::create([
                 'number' => (string) Str::uuid(), 'user_id' => $user->id, 'simulation_scenario_id' => $s->id,
                 'amount' => $amount, 'method' => 'manual_local', 'workflow' => 'manual_local', 'status' => 'pending',
                 'request_key' => $key, 'expires_at' => now()->addDay(),
+                'unique_code' => $code, 'reserved_unique_code' => $code, 'transfer_amount' => $amount + $extra,
             ]);
-            app(AuditService::class)->record('deposit.created', $invoice, null, ['amount' => $amount, 'workflow' => 'manual_local'], $s->id);
+            app(AuditService::class)->record('deposit.created', $invoice, null,
+                ['amount' => $amount, 'transfer_amount' => $invoice->transfer_amount, 'unique_code' => $code, 'workflow' => 'manual_local'], $s->id);
 
             return $invoice;
         }, 5);
     }
 
-    public function submit(MockPaymentInvoice $invoice, User $actor, string $reference, ?string $note, UploadedFile $proof): MockPaymentInvoice
+    public function submit(MockPaymentInvoice $invoice, User $actor, string $reference, ?string $note, ?UploadedFile $proof = null): MockPaymentInvoice
     {
         Gate::forUser($actor)->authorize('submit', $invoice);
-        $hash = hash_file('sha256', $proof->getRealPath());
-        $path = $proof->store('deposit-proofs/'.$invoice->id, 'local');
-        if (! $path) {
+        $hash = $proof ? hash_file('sha256', $proof->getRealPath()) : null;
+        $path = $proof?->store('deposit-proofs/'.$invoice->id, 'local');
+        if ($proof && ! $path) {
             throw ValidationException::withMessages(['transfer_proof' => 'Bukti transfer gagal disimpan. Silakan coba lagi.']);
         }
 
@@ -77,10 +82,12 @@ class ManualDepositService
                 return $i;
             }, 5);
         } catch (\Throwable $exception) {
-            Storage::disk('local')->delete($path);
+            if ($path) {
+                Storage::disk('local')->delete($path);
+            }
             throw $exception;
         }
-        if ($submitted->transfer_proof_path !== $path) {
+        if ($path && $submitted->transfer_proof_path !== $path) {
             Storage::disk('local')->delete($path);
         }
 
@@ -103,9 +110,6 @@ class ManualDepositService
             if ($i->status !== 'awaiting_review') {
                 throw ValidationException::withMessages(['invoice' => 'Hanya pengajuan yang menunggu verifikasi dapat ditinjau.']);
             }
-            if ($approve && (! $i->transfer_proof_path || ! Storage::disk('local')->exists($i->transfer_proof_path))) {
-                throw ValidationException::withMessages(['invoice' => 'Bukti transfer belum tersedia. Deposit tidak dapat disetujui.']);
-            }
             if ($approve && $s->status === 'archived') {
                 throw ValidationException::withMessages(['scenario' => 'Workspace diarsipkan; pengajuan hanya dapat ditolak.']);
             }
@@ -120,12 +124,12 @@ class ManualDepositService
                 $i->ledger_transaction_id = $tx->id;
                 $i->paid_at = now();
             }
-            $i->fill(['status' => $target, 'reviewed_by' => $reviewer->id, 'reviewed_at' => now(), 'review_note' => $note])->save();
+            $i->fill(['status' => $target, 'reserved_unique_code' => null, 'reviewed_by' => $reviewer->id, 'reviewed_at' => now(), 'review_note' => $note])->save();
             if ($approve) {
                 app(MemberBonusService::class)->topup($i);
             }
             app(AuditService::class)->record('deposit.'.$target, $i, $before, ['status' => $target, 'reviewed_by' => $reviewer->id, 'review_note' => $note, 'ledger_transaction_id' => $i->ledger_transaction_id], $s->id);
-            $i->user->notify(new SimulationNotification($approve ? 'Deposit disetujui' : 'Deposit ditolak', Money::rupiah($i->amount).($approve ? ' telah ditambahkan ke wallet setelah verifikasi bukti transfer.' : ' tidak ditambahkan ke wallet. Catatan: '.($note ?: 'Tidak ada catatan.')), '/payments/'.$i->id));
+            $i->user->notify(new SimulationNotification($approve ? 'Deposit disetujui' : 'Deposit ditolak', Money::rupiah($i->amount).($approve ? ' telah ditambahkan ke wallet setelah verifikasi transfer oleh admin.' : ' tidak ditambahkan ke wallet. Catatan: '.($note ?: 'Tidak ada catatan.')), '/payments/'.$i->id));
 
             return $i;
         }, 5);
@@ -147,7 +151,7 @@ class ManualDepositService
                 throw ValidationException::withMessages(['invoice' => 'Pengajuan yang telah ditinjau tidak dapat dibatalkan.']);
             }
             $before = $i->status;
-            $i->update(['status' => 'cancelled']);
+            $i->update(['status' => 'cancelled', 'reserved_unique_code' => null]);
             app(AuditService::class)->record('deposit.cancelled', $i, ['status' => $before], ['status' => 'cancelled'], $s->id);
 
             return $i;
@@ -164,13 +168,30 @@ class ManualDepositService
                 if ($i->status !== 'pending' || $i->expires_at->isFuture()) {
                     return;
                 }
-                $i->update(['status' => 'expired']);
+                $i->update(['status' => 'expired', 'reserved_unique_code' => null]);
                 app(AuditService::class)->record('deposit.expired', $i, ['status' => 'pending'], ['status' => 'expired'], $i->simulation_scenario_id);
                 $count++;
             }, 5);
         });
 
         return $count;
+    }
+
+    private function reserveUniqueCode(int $amount): int
+    {
+        $cursor = SystemSetting::whereKey('deposit_unique_code_cursor')->lockForUpdate()->firstOrFail();
+        $used = MockPaymentInvoice::whereNotNull('reserved_unique_code')->lockForUpdate()->pluck('reserved_unique_code')->all();
+        for ($offset = 1; $offset <= 999; $offset++) {
+            $code = ((int) $cursor->value + $offset - 1) % 999 + 1;
+            // The suffix is always three digits, even for a non-round deposit.
+            if ($code !== $amount % 1000 && ! in_array($code, $used, true)) {
+                $cursor->update(['value' => (string) $code]);
+
+                return $code;
+            }
+        }
+
+        throw ValidationException::withMessages(['amount' => 'Kode unik transfer sedang penuh. Coba lagi setelah pengajuan lain selesai.']);
     }
 
     private function assertLocal(SimulationScenario $workspace): void
