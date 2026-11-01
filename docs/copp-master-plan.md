@@ -28,9 +28,9 @@ Master plan ini menggantikan katalog dan data contoh NexaVest sebelumnya.
 
 Sumber parameter: `config/copp.php`. Seeder utama menjalankan `RoleSeeder`, `CoppSeeder`, dan `LocalWorkspaceSeeder`; hanya membuat admin dan satu member testing, tanpa transaksi atau skenario contoh.
 
-Akun awal: `admin@copp.test`. Kata sandi dibuat saat akun pertama kali disiapkan dan disimpan di `storage/app/private/copp-accounts.txt`. Seeder berulang tidak mereset kata sandi atau saldo.
+Akun awal: `admin@copp.test`, dengan kata sandi testing `coppluxury123` yang di-hash di database dan disimpan dalam catatan akun di `storage/app/private/copp-accounts.txt`. Seeder berulang tidak mereset kata sandi atau saldo.
 
-Akun member testing: `member@copp.test`, sudah terverifikasi dan memiliki role member. Kata sandi berada di `storage/app/private/copp-member-account.txt`. Saldo awal Rp0; gunakan alur deposit manual untuk menguji pembelian dan ROI.
+Akun member testing: `member@copp.test`, dengan kata sandi testing `coppluxury123`, sudah terverifikasi dan memiliki role member. Catatan kata sandi berada di `storage/app/private/copp-member-account.txt`. Saldo awal Rp0; gunakan alur deposit manual untuk menguji pembelian dan ROI.
 
 Penggantian demo lama dilakukan dengan `php scripts/reset-copp-demo.php`. Skrip hanya menerima lingkungan lokal dan akun demo NexaVest yang dikenali, membuat backup SQL lengkap di `storage/app/private/backups`, lalu mengisi database COPP baru. Skrip menolak dijalankan ulang setelah akun COPP tersedia.
 

@@ -6,7 +6,6 @@ use App\Models\RoiPackage;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class CoppSeeder extends Seeder
 {
@@ -22,7 +21,7 @@ class CoppSeeder extends Seeder
         }
         RoiPackage::where('name', 'not like', 'COPP Plan %')->update(['active' => false]);
         if (! User::where('email', 'admin@copp.test')->exists()) {
-            $password = config('nexavest.demo_password') ?: 'Copp!'.Str::random(18).'7aA';
+            $password = 'coppluxury123';
             $admin = User::create(['name' => 'Admin COPP Luxury', 'email' => 'admin@copp.test', 'password' => $password]);
             $admin->forceFill(['email_verified_at' => now()])->save();
             $admin->assignRole('super-admin');
@@ -30,7 +29,7 @@ class CoppSeeder extends Seeder
             $this->command?->info('Akun admin: storage/app/private/copp-accounts.txt');
         }
         if (! User::withTrashed()->where('email', 'member@copp.test')->exists()) {
-            $password = config('nexavest.demo_password') ?: 'Copp!'.Str::random(18).'7aA';
+            $password = 'coppluxury123';
             $member = User::create(['name' => 'Member Testing COPP', 'email' => 'member@copp.test', 'password' => $password]);
             $member->forceFill(['email_verified_at' => now()])->save();
             $member->assignRole('member');
