@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\ValidationException;
-use PragmaRX\Google2FA\Google2FA;
 
 class ProfileController extends Controller
 {
@@ -28,9 +26,6 @@ class ProfileController extends Controller
             $u->email_verified_at = null;
         }
         $u->fill(['name' => $d['name'], 'email' => strtolower($d['email'])])->save();
-        if (! $u->hasVerifiedEmail()) {
-            $u->sendEmailVerificationNotification();
-        }
         app(AuditService::class)->record('profile.updated', $u, $before, $u->only('name', 'email'));
 
         return back()->with('status', 'Profil diperbarui.');
@@ -77,46 +72,5 @@ class ProfileController extends Controller
         app(AuditService::class)->record('profile.sessions_revoked', $r->user());
 
         return back()->with('status', 'Sesi perangkat lain dicabut.');
-    }
-
-    public function setupTwoFactor(Request $r)
-    {
-        $r->validate(['current_password' => 'required|current_password']);
-        abort_unless($r->user()->hasRole('super-admin'), 403);
-        if ($r->user()->two_factor_confirmed_at) {
-            throw ValidationException::withMessages(['code' => '2FA sudah aktif.']);
-        }
-        $r->session()->put('2fa_setup_secret', (new Google2FA)->generateSecretKey());
-
-        return back()->with('status', 'Masukkan kunci manual ke aplikasi autentikator, lalu verifikasi.');
-    }
-
-    public function confirmTwoFactor(Request $r)
-    {
-        abort_unless($r->user()->hasRole('super-admin'), 403);
-        $d = $r->validate(['code' => 'required|digits:6']);
-        $secret = $r->session()->get('2fa_setup_secret');
-        $counter = $secret ? (new Google2FA)->verifyKeyNewer($secret, $d['code'], 0, 1) : false;
-        if (! $counter) {
-            throw ValidationException::withMessages(['code' => 'Kode autentikator tidak valid.']);
-        }
-        $r->user()->forceFill(['two_factor_secret' => $secret, 'two_factor_confirmed_at' => now(), 'two_factor_last_counter' => $counter])->save();
-        $r->session()->forget('2fa_setup_secret');
-        app(AuditService::class)->record('auth.2fa_enabled', $r->user());
-
-        return back()->with('status', '2FA aktif untuk login berikutnya.');
-    }
-
-    public function disableTwoFactor(Request $r)
-    {
-        $r->validate(['current_password' => 'required|current_password', 'code' => 'required|digits:6']);
-        $u = $r->user();
-        if (! $u->two_factor_confirmed_at || ! (new Google2FA)->verifyKey($u->two_factor_secret, $r->input('code'), 1)) {
-            throw ValidationException::withMessages(['code' => 'Kode autentikator tidak valid.']);
-        }
-        $u->forceFill(['two_factor_secret' => null, 'two_factor_confirmed_at' => null, 'two_factor_last_counter' => null])->save();
-        app(AuditService::class)->record('auth.2fa_disabled', $u);
-
-        return back()->with('status', '2FA dinonaktifkan.');
     }
 }

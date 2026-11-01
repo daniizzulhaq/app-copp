@@ -6,9 +6,9 @@ use App\Models\User;
 use App\Notifications\SimulationNotification;
 use App\Services\AuditService;
 use App\Services\ReferralService;
+use App\Services\TemporaryPasswordResetService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,13 +18,12 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
-use PragmaRX\Google2FA\Google2FA;
 
 class AuthController extends Controller
 {
     public function login(Request $r)
     {
-        $d = $r->validate(['email' => 'required|email|max:255', 'password' => 'required|string', 'code' => 'nullable|digits:6']);
+        $d = $r->validate(['email' => 'required|email|max:255', 'password' => 'required|string']);
         $key = 'login:'.Str::lower($d['email']).'|'.$r->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages(['email' => 'Terlalu banyak percobaan. Coba dalam '.RateLimiter::availableIn($key).' detik.']);
@@ -33,16 +32,6 @@ class AuthController extends Controller
         $u = User::where('email', Str::lower($d['email']))->where('active', true)->first();
         if (! $u || ! Hash::check($d['password'], $u->password)) {
             throw ValidationException::withMessages(['email' => 'Email atau kata sandi tidak sesuai.']);
-        }
-        if ($u->two_factor_confirmed_at) {
-            DB::transaction(function () use ($u, $d) {
-                $locked = User::whereKey($u->id)->lockForUpdate()->firstOrFail();
-                $counter = (new Google2FA)->verifyKeyNewer($locked->two_factor_secret, $d['code'] ?? '', $locked->two_factor_last_counter ?? 0, 1);
-                if ($counter === false) {
-                    throw ValidationException::withMessages(['code' => 'Kode autentikator salah atau sudah digunakan.']);
-                }
-                $locked->forceFill(['two_factor_last_counter' => $counter])->save();
-            });
         }
         Auth::login($u, $r->boolean('remember'));
         $r->session()->regenerate();
@@ -55,12 +44,12 @@ class AuthController extends Controller
     public function register(Request $r)
     {
         $d = $r->validate(['name' => 'required|string|max:100', 'email' => 'required|email|max:255|unique:users', 'password' => ['required', 'confirmed', PasswordRule::min(10)->mixedCase()->numbers()],
-            'referral' => 'nullable|string|max:12', 'simulation_consent' => 'accepted']);
+            'referral' => 'nullable|string|max:12']);
         $u = DB::transaction(function () use ($d) {
             $u = User::create(['name' => $d['name'], 'email' => Str::lower($d['email']), 'password' => $d['password']]);
             $u->assignRole('member');
             app(ReferralService::class)->attach($u, $d['referral'] ?? null);
-            $u->notify(new SimulationNotification('Selamat datang di COPP Luxury', 'Akun Anda hanya digunakan untuk simulasi.'));
+            $u->notify(new SimulationNotification('Selamat datang di COPP Luxury', 'Akun Anda sudah aktif dan bisa langsung digunakan.'));
             app(AuditService::class)->record('auth.register', $u);
 
             return $u;
@@ -69,7 +58,7 @@ class AuthController extends Controller
         Auth::login($u);
         $r->session()->regenerate();
 
-        return redirect()->route('verification.notice');
+        return redirect()->route('dashboard');
     }
 
     public function logout(Request $r)
@@ -82,12 +71,44 @@ class AuthController extends Controller
         return redirect('/');
     }
 
-    public function forgot(Request $r)
+    public function forgotForm(Request $r, TemporaryPasswordResetService $temporary)
     {
-        $r->validate(['email' => 'required|email']);
+        return view('auth.forgot', ['temporaryReset' => $temporary->enabled()]);
+    }
+
+    public function forgot(Request $r, TemporaryPasswordResetService $temporary)
+    {
+        $data = $r->validate(['email' => 'required|email|max:255']);
+        if ($temporary->enabled()) {
+            $temporary->begin($r, $data['email']);
+
+            return redirect()->route('password.temporary');
+        }
         Password::sendResetLink($r->only('email'));
 
-        return back()->with('status', 'Jika email terdaftar, tautan reset telah dikirim. Mode lokal: periksa storage/logs/laravel.log.');
+        return back()->with('status', 'Jika email terdaftar, tautan reset telah dikirim.');
+    }
+
+    public function temporaryResetForm(Request $r, TemporaryPasswordResetService $temporary)
+    {
+        $account = $temporary->account($r);
+        if (! $account) {
+            return redirect()->route('password.request')->withErrors(['email' => 'Masukkan email terlebih dahulu untuk membuat password baru.']);
+        }
+
+        return response()->view('auth.reset-temporary', ['accountEmail' => $account->email])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function temporaryReset(Request $r, TemporaryPasswordResetService $temporary)
+    {
+        if (! $temporary->account($r)) {
+            return redirect()->route('password.request')->withErrors(['email' => 'Sesi reset sudah berakhir. Masukkan email kembali.']);
+        }
+        $data = $r->validate(['password' => ['required', 'confirmed', PasswordRule::min(10)->mixedCase()->numbers()]]);
+        $temporary->reset($r, $data['password']);
+
+        return redirect()->route('login')->with('status', 'Password berhasil diperbarui. Silakan masuk dengan password baru.');
     }
 
     public function reset(Request $r)
@@ -101,21 +122,5 @@ class AuthController extends Controller
         });
 
         return $status === Password::PASSWORD_RESET ? redirect('/login')->with('status', 'Kata sandi berhasil direset.') : back()->withErrors(['email' => __($status)]);
-    }
-
-    public function verify(EmailVerificationRequest $r)
-    {
-        $r->fulfill();
-
-        return redirect('/dashboard')->with('status', 'Email terverifikasi.');
-    }
-
-    public function resend(Request $r)
-    {
-        if (! $r->user()->hasVerifiedEmail()) {
-            $r->user()->sendEmailVerificationNotification();
-        }
-
-        return back()->with('status', 'Tautan verifikasi dikirim. Mode lokal: periksa storage/logs/laravel.log.');
     }
 }
