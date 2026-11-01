@@ -28,7 +28,7 @@ Master plan ini menggantikan katalog dan data contoh NexaVest sebelumnya.
 
 Sumber parameter: `config/copp.php`. Seeder utama menjalankan `RoleSeeder`, `CoppSeeder`, dan `LocalWorkspaceSeeder`; hanya membuat admin dan satu member testing, tanpa transaksi atau skenario contoh.
 
-Akun awal: `admin@copp.test`, dengan kata sandi testing `coppluxury123` yang di-hash di database dan disimpan dalam catatan akun di `storage/app/private/copp-accounts.txt`. Seeder berulang tidak mereset kata sandi atau saldo.
+Akun awal: `admin@copp.test`, dengan kata sandi testing `coppluxury123` yang di-hash di database dan disimpan dalam catatan akun di `storage/app/private/copp-accounts.txt`. Menjalankan ulang `php artisan db:seed --class=CoppSeeder --force` mereset password admin dan member testing ke nilai tersebut serta memperbarui paket COPP, tanpa menghapus transaksi atau saldo. Akun yang diarsipkan tidak diaktifkan kembali.
 
 Akun member testing: `member@copp.test`, dengan kata sandi testing `coppluxury123`, sudah terverifikasi dan memiliki role member. Catatan kata sandi berada di `storage/app/private/copp-member-account.txt`. Saldo awal Rp0; gunakan alur deposit manual untuk menguji pembelian dan ROI.
 

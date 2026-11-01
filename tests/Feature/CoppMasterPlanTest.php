@@ -19,6 +19,7 @@ use App\Services\WalletService;
 use Carbon\Carbon;
 use Database\Seeders\CoppSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -54,6 +55,35 @@ class CoppMasterPlanTest extends TestCase
             'simulation_scenario_id' => $this->workspace->id, 'amount' => $amount, 'workflow' => 'manual_local',
             'method' => 'manual_local', 'status' => 'paid_local', 'expires_at' => now()->addDay(), 'paid_at' => now(),
         ]);
+    }
+
+    public function test_reseeding_resets_test_account_passwords_without_changing_wallets_or_other_members(): void
+    {
+        Storage::fake('local');
+        $this->seed(CoppSeeder::class);
+        $accounts = User::whereIn('email', ['admin@copp.test', 'member@copp.test'])->get();
+        $otherPassword = $this->member->password;
+        $userCount = User::count();
+
+        foreach ($accounts as $account) {
+            $account->update(['password' => 'PreviousPassword123']);
+            app(WalletService::class)->creditDeposit($account, $this->workspace, 100000, 'test-seeder:'.$account->id);
+        }
+        $transactionCount = $this->workspace->transactions()->count();
+
+        $this->seed(CoppSeeder::class);
+
+        foreach ($accounts as $account) {
+            $account->refresh();
+            $this->assertTrue(Hash::check('coppluxury123', $account->password));
+            $this->assertFalse(Hash::check('PreviousPassword123', $account->password));
+            $wallet = app(WalletService::class)->get($account, $this->workspace);
+            $this->assertSame(100000, $wallet->balance());
+        }
+        $this->assertSame($userCount, User::count());
+        $this->assertSame($otherPassword, $this->member->refresh()->password);
+        $this->assertSame($transactionCount, $this->workspace->transactions()->count());
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
 
     public function test_all_six_plans_have_exact_total_roi_and_a_capped_final_day(): void
