@@ -1,0 +1,1 @@
+@extends('errors.layout') @section('code','429') @section('heading','Terlalu banyak permintaan') @section('message','Tunggu sejenak sebelum mencoba kembali. Pembatasan ini menjaga keamanan dan kestabilan workspace.')

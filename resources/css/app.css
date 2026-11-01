@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.deposit-bank-account { grid-template-columns: minmax(90px, 1fr) minmax(0, 2fr); gap: 12px; margin-block: 18px; padding: 18px; border: 1px solid #dce6df; border-radius: 12px; background: #f7fbf6; }
+.deposit-bank-account dd { overflow-wrap: anywhere; margin: 0; }
+.deposit-proof-image { display: block; max-width: 100%; max-height: 420px; margin: 16px auto; object-fit: contain; border-radius: 12px; }
+input[type="file"] { max-width: 100%; min-width: 0; }
+
+.withdrawal-bank-destination { display: grid; gap: 4px; margin-block: 10px; overflow-wrap: anywhere; }
+.withdrawal-bank-destination span { font-size: 14px; }
+.withdrawal-bank-destination small { color: #64748b; }
+

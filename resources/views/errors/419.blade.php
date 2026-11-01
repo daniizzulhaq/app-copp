@@ -1,0 +1,1 @@
+@extends('errors.layout') @section('code','419') @section('heading','Sesi formulir telah berakhir') @section('message','Muat ulang halaman atau masuk kembali, kemudian kirim formulir dengan sesi yang baru.')

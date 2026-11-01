@@ -1,0 +1,1 @@
+export default {content: ['./resources/**/*.blade.php','./resources/**/*.js','./app/**/*.php','./vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php'], theme: {extend: {colors: {navy:'#0B1220',brand:'#10B981'},fontFamily:{sans:['Inter','Segoe UI','sans-serif']}}}, plugins: []};

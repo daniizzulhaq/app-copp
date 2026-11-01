@@ -1,0 +1,1 @@
+@extends('errors.layout') @section('code','422') @section('heading','Permintaan belum dapat diproses') @section('message','Periksa status objek dan parameter yang digunakan. Skenario yang telah berjalan memiliki parameter yang dibekukan.')

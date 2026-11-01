@@ -1,0 +1,13 @@
+/* COPP identity shared by the member, staff and public layouts. */
+:root { --brand: #b8860b; }
+.btn-primary, .member-app .btn-primary { background: #ae7905; border-color: #ae7905; color: #fff; }
+.btn-primary:hover, .member-app .btn-primary:hover { background: #8b6005; border-color: #8b6005; }
+.eyebrow, .member-app .page-heading .eyebrow { color: #966809; }
+.member-balance-card { border-color: #8c6c25; background: radial-gradient(ellipse at 90% 0%, #75591b 0, transparent 65%), linear-gradient(125deg, #151719, #302a1b); }
+.member-balance-top > span, .member-balance-bottom small, .member-balance-caption { color: #e5d5ac; }
+.member-balance-indicator { background: #f7cd61; }
+.member-app .package-rate { color: #966809; }
+.copp-brand img { display: block; width: 160px; height: auto; max-width: 100%; border-radius: 6px; }
+.copp-brand { max-width: 180px; }
+.copp-banner { display: block; width: 100%; height: auto; max-width: 900px; margin: 0 auto 24px; border-radius: 16px; }
+.copp-mission-grid { margin-top: 18px; }

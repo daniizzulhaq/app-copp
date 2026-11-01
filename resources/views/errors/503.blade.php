@@ -1,0 +1,1 @@
+@extends('errors.layout') @section('code','503') @section('heading','Layanan sementara belum tersedia') @section('message','Workspace sedang dalam pemeliharaan atau konfigurasi layanan belum lengkap. Silakan coba kembali setelah layanan siap.')

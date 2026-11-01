@@ -1,0 +1,1 @@
+@extends('errors.layout') @section('code','500') @section('heading','Terjadi kendala pada sistem') @section('message','Permintaan belum berhasil diselesaikan. Periksa status transaksi sebelum mengulangi. Pengelola dapat meninjau log aplikasi untuk detail teknis.')

@@ -1,0 +1,4 @@
+@props(['transactions'])
+<div class="table-wrap"><table><thead><tr><th>Transaksi / deskripsi</th><th>Tanggal</th><th>Member</th><th>Jenis</th><th class="num">Nominal</th></tr></thead><tbody>
+@forelse($transactions as $tx)<tr><td><div class="cell-title">@can('view-reports')<a href="/transactions/{{ $tx->id }}">#NV-{{ str_pad($tx->id,6,'0',STR_PAD_LEFT) }}</a>@else #NV-{{ str_pad($tx->id,6,'0',STR_PAD_LEFT) }} @endcan</div><small>{{ \App\Support\UiText::local($tx->description) }}</small></td><td>{{ $tx->effective_date->format('d M Y') }}</td><td>{{ $tx->user?->name ?? 'Sistem' }}</td><td><span class="tag">{{ $tx->kind === 'principal_returned' ? 'Pengembalian modal' : str_replace('_',' ',$tx->kind) }}</span></td><td class="num money">{{ \App\Support\Money::rupiah($tx->entries_max_amount) }}</td></tr>
+@empty<tr><td colspan="5"><x-empty/></td></tr>@endforelse</tbody></table></div>
