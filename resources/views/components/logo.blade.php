@@ -1,1 +1,1 @@
-<span class="brand-lockup copp-brand"><img src="{{ asset('images/copp-logo.jpg') }}" alt="COPP Luxury" width="180" height="60"><span class="sr-only">COPP Luxury</span></span>
+<span class="brand-lockup copp-brand"><img src="{{ asset('images/vipcopp-logo.png') }}" alt="VIPCOPP" width="180" height="68"><span class="sr-only">VIPCOPP</span></span>
