@@ -5,6 +5,8 @@ use App\Http\Controllers\AnalysisReportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DailyRoiClaimController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DepositMethodController;
+use App\Http\Controllers\LandingContentController;
 use App\Http\Controllers\ManualDepositController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OperationsController;
@@ -18,7 +20,7 @@ use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WithdrawalController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'landing')->name('home');
+Route::get('/', [LandingContentController::class, 'show'])->name('home');
 Route::middleware('guest')->group(function () {
     Route::view('/login', 'auth.login')->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
@@ -47,6 +49,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/payments/{invoice}/simulate', [PaymentController::class, 'simulate'])->middleware('throttle:20,1');
     Route::post('/payments/{invoice}/submit', [ManualDepositController::class, 'submit'])->middleware('throttle:20,1');
     Route::get('/payments/{invoice}/proof', [ManualDepositController::class, 'proof'])->name('payments.proof');
+    Route::get('/payments/{invoice}/qris', [DepositMethodController::class, 'invoiceImage'])->name('payments.qris');
     Route::post('/payments/{invoice}/cancel', [ManualDepositController::class, 'cancel'])->middleware('throttle:20,1');
     Route::patch('/payments/{invoice}/review', [ManualDepositController::class, 'review'])->middleware('can:manage');
     Route::get('/operations', [OperationsController::class, 'index'])->name('operations')->middleware('can:view-reports');
@@ -80,6 +83,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/transactions/{transaction}/reverse', [ReportController::class, 'reverse']);
         Route::get('/settings', [ReportController::class, 'settings'])->name('settings');
         Route::put('/settings', [ReportController::class, 'saveSettings']);
+        Route::get('/settings/deposit-methods', [DepositMethodController::class, 'edit'])->name('settings.deposit-methods');
+        Route::put('/settings/deposit-methods', [DepositMethodController::class, 'update']);
+        Route::get('/settings/deposit-methods/{method}/preview', [DepositMethodController::class, 'preview'])->name('settings.deposit-methods.preview');
+        Route::get('/settings/landing-content', [LandingContentController::class, 'edit'])->name('settings.landing-content');
+        Route::put('/settings/landing-content', [LandingContentController::class, 'update']);
     });
     Route::middleware('can:view-reports')->group(function () {
         Route::get('/analysis-reports', AnalysisReportController::class)->name('analysis-reports');

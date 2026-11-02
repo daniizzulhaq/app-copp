@@ -13,6 +13,6 @@ class PaymentRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['amount' => 'required|integer|min:10000|max:1000000000', 'method' => 'required|in:manual_local,va_sandbox,qris_dummy,bank_dummy', 'request_key' => 'required|uuid'];
+        return ['amount' => 'required|integer|min:10000|max:1000000000', 'method' => 'required|in:manual_local,qris_dana,qris_gopay,va_sandbox,qris_dummy,bank_dummy', 'request_key' => 'required|uuid'];
     }
 }

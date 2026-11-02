@@ -6,6 +6,8 @@
 .deposit-bank-account dd { overflow-wrap: anywhere; margin: 0; }
 .deposit-proof-image { display: block; max-width: 100%; max-height: 420px; margin: 16px auto; object-fit: contain; border-radius: 12px; }
 input[type="file"] { max-width: 100%; min-width: 0; }
+.deposit-qris-image { display: block; width: 100%; max-width: 320px; max-height: 420px; object-fit: contain; margin: 16px auto; background: white; padding: 12px; border: 1px solid #dce6df; border-radius: 12px; }
+.landing-editable-text { white-space: pre-line; }
 
 .withdrawal-bank-destination { display: grid; gap: 4px; margin-block: 10px; overflow-wrap: anywhere; }
 .withdrawal-bank-destination span { font-size: 14px; }

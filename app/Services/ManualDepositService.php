@@ -17,13 +17,13 @@ use Illuminate\Validation\ValidationException;
 
 class ManualDepositService
 {
-    public function create(User $user, SimulationScenario $workspace, int $amount, string $key): MockPaymentInvoice
+    public function create(User $user, SimulationScenario $workspace, int $amount, string $key, string $method = 'manual_local'): MockPaymentInvoice
     {
-        return DB::transaction(function () use ($user, $workspace, $amount, $key) {
+        return DB::transaction(function () use ($user, $workspace, $amount, $key, $method) {
             $s = SimulationScenario::whereKey($workspace->id)->lockForUpdate()->firstOrFail();
             $this->assertLocal($s);
             if ($old = MockPaymentInvoice::where('request_key', $key)->first()) {
-                if ($old->user_id !== $user->id || $old->simulation_scenario_id !== $s->id || $old->amount !== $amount || $old->workflow !== 'manual_local') {
+                if ($old->user_id !== $user->id || $old->simulation_scenario_id !== $s->id || $old->amount !== $amount || $old->workflow !== 'manual_local' || $old->method !== $method) {
                     throw ValidationException::withMessages(['request_key' => 'Kunci pengajuan digunakan untuk transaksi berbeda.']);
                 }
 
@@ -35,16 +35,25 @@ class ManualDepositService
             if ($amount < 10000 || $amount > 1000000000) {
                 throw ValidationException::withMessages(['amount' => 'Nominal harus antara Rp10.000 dan Rp1.000.000.000.']);
             }
+            if ($method === 'manual_local') {
+                $destination = SystemSetting::depositAccount();
+            } else {
+                $destination = SystemSetting::qrisMethods()[$method] ?? null;
+                if (! $destination || ! $destination['enabled'] || ! $destination['holder'] || ! $destination['image'] || ! Storage::disk('local')->exists($destination['image'])) {
+                    throw ValidationException::withMessages(['method' => 'Metode QRIS belum tersedia. Pilih metode lain atau hubungi admin.']);
+                }
+            }
             $code = $this->reserveUniqueCode($amount);
             $extra = ($code - $amount % 1000 + 1000) % 1000;
             $invoice = MockPaymentInvoice::create([
                 'number' => (string) Str::uuid(), 'user_id' => $user->id, 'simulation_scenario_id' => $s->id,
-                'amount' => $amount, 'method' => 'manual_local', 'workflow' => 'manual_local', 'status' => 'pending',
+                'amount' => $amount, 'method' => $method, 'workflow' => 'manual_local', 'status' => 'pending',
+                'payment_destination' => $destination,
                 'request_key' => $key, 'expires_at' => now()->addDay(),
                 'unique_code' => $code, 'reserved_unique_code' => $code, 'transfer_amount' => $amount + $extra,
             ]);
             app(AuditService::class)->record('deposit.created', $invoice, null,
-                ['amount' => $amount, 'transfer_amount' => $invoice->transfer_amount, 'unique_code' => $code, 'workflow' => 'manual_local'], $s->id);
+                ['amount' => $amount, 'transfer_amount' => $invoice->transfer_amount, 'unique_code' => $code, 'workflow' => 'manual_local', 'method' => $method], $s->id);
 
             return $invoice;
         }, 5);

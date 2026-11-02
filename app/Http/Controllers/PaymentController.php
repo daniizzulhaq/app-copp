@@ -21,19 +21,21 @@ class PaymentController extends Controller
             ->when($r->status, fn ($q) => $q->where('status', $r->status))->when($r->q, fn ($q) => $q->where('number', 'like', '%'.$r->q.'%'))->orderBy('id', $r->sort === 'asc' ? 'asc' : 'desc')->paginate(15)->withQueryString();
 
         $bankAccount = SystemSetting::depositAccount();
+        $qrisMethods = SystemSetting::qrisMethods();
 
-        return view('payments.index', compact('s', 'invoices', 'bankAccount'));
+        return view('payments.index', compact('s', 'invoices', 'bankAccount', 'qrisMethods'));
     }
 
     public function store(PaymentRequest $r, ScenarioContext $context, MockPaymentService $service)
     {
         $s = $context->resolve($r);
         if ($s->isLocal()) {
-            $r->validate(['method' => 'required|in:manual_local']);
-            $i = app(ManualDepositService::class)->create($r->user(), $s, (int) $r->amount, $r->request_key);
+            $r->validate(['method' => 'required|in:manual_local,qris_dana,qris_gopay']);
+            $i = app(ManualDepositService::class)->create($r->user(), $s, (int) $r->amount, $r->request_key, $r->method);
 
             return redirect('/payments/'.$i->id)->with('status', 'Deposit dibuat. Transfer sesuai total dengan kode unik, lalu konfirmasi ke admin. Bukti transfer opsional.');
         }
+        $r->validate(['method' => 'required|in:va_sandbox,qris_dummy,bank_dummy']);
         $i = $service->create($r->user(), $s, (int) $r->amount, $r->method, $r->request_key);
 
         return redirect('/payments/'.$i->id)->with('status', 'Invoice sandbox dibuat.');
@@ -46,7 +48,7 @@ class PaymentController extends Controller
         if ($invoice->workflow === 'manual_local') {
             $invoice->load('user', 'scenario', 'reviewer');
 
-            $bankAccount = SystemSetting::depositAccount();
+            $bankAccount = $invoice->payment_destination ?? SystemSetting::depositAccount();
 
             return view('payments.manual-show', compact('invoice', 'bankAccount'));
         }
