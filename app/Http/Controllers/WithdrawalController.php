@@ -20,7 +20,9 @@ class WithdrawalController extends Controller
             ->when($r->q, fn ($q) => $q->where(fn ($q) => $q->where('note', 'like', '%'.$r->q.'%')->orWhereHas('user', fn ($u) => $u->where('name', 'like', '%'.$r->q.'%'))))
             ->orderBy('id', $r->sort === 'asc' ? 'asc' : 'desc')->paginate(15)->withQueryString();
 
-        return view('withdrawals', compact('s', 'withdrawals'));
+        $hasPurchasedProduct = $r->user()->hasPurchasedProduct($s->id);
+
+        return view('withdrawals', compact('s', 'withdrawals', 'hasPurchasedProduct'));
     }
 
     public function store(WithdrawalFormRequest $r, ScenarioContext $context, WithdrawalSimulationService $service)

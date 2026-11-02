@@ -5,6 +5,9 @@
 </details>
 <section class="member-section member-form-card">
     <div class="member-section-heading"><div><h2>Ajukan withdrawal</h2><p>Saldo ditahan sementara hingga admin menyelesaikan transfer.</p></div><span class="member-list-icon violet"><x-icon name="up"/></span></div>
+    @unless($hasPurchasedProduct)
+        <div class="notice">Beli minimal satu produk terlebih dahulu sebelum mengajukan penarikan. <a href="/packages" class="text-link">Lihat produk →</a></div>
+    @endunless
     @if(auth()->user()->hasBankAccount())
         <div class="notice"><strong>Rekening tujuan</strong><br>{{ auth()->user()->bank_name }} · <span class="money">{{ auth()->user()->bank_account_number }}</span><br>a.n. {{ auth()->user()->bank_account_holder }}</div>
     @else
@@ -18,7 +21,7 @@
         <p class="notice">Minimum WD Rp50.000. Biaya admin 10% dipotong dari nominal pengajuan. Contoh: WD Rp50.000, admin Rp5.000, diterima Rp45.000.</p>
         <x-field name="note" label="Catatan (opsional)" maxlength="500" placeholder="Tambahkan catatan pengajuan"/>
         <div class="member-inline-note"><x-icon name="shield"/><p>Periksa rekening tujuan sebelum mengirim. Jika pengajuan ditolak, saldo dikembalikan ke wallet.</p></div>
-        <button class="btn btn-primary btn-full" @disabled(!auth()->user()->hasBankAccount())>Ajukan penarikan <x-icon name="up"/></button>
+        <button class="btn btn-primary btn-full" @disabled(!$hasPurchasedProduct || !auth()->user()->hasBankAccount())>Ajukan penarikan <x-icon name="up"/></button>
     </form>
 </section>
 <section class="member-section">

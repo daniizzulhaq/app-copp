@@ -30,6 +30,9 @@ class WithdrawalSimulationService
             if ($amount < 50000 || $amount > 1000000000) {
                 throw ValidationException::withMessages(['amount' => 'WD minimal Rp50.000 dan maksimal Rp1.000.000.000.']);
             }
+            if (! $user->hasPurchasedProduct($s->id)) {
+                throw ValidationException::withMessages(['product' => 'Beli minimal satu produk terlebih dahulu sebelum mengajukan penarikan.']);
+            }
             if ($s->isLocal() && $method !== 'bank_transfer') {
                 throw ValidationException::withMessages(['method' => 'Withdrawal menggunakan transfer ke rekening bank terdaftar.']);
             }

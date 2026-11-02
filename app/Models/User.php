@@ -40,6 +40,12 @@ class User extends Authenticatable
         return $this->hasMany(Referral::class, 'referrer_id');
     }
 
+    public function hasPurchasedProduct(int $scenarioId): bool
+    {
+        return $this->investments()->where('simulation_scenario_id', $scenarioId)
+            ->whereIn('status', ['active', 'completed', 'suspended', 'defaulted'])->exists();
+    }
+
     public function isStaff(): bool
     {
         return $this->hasRole('super-admin');
