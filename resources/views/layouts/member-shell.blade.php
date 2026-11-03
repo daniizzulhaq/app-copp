@@ -37,6 +37,11 @@
         <footer class="member-footer"><x-icon name="shield"/><span>COPP Luxury</span></footer>
     </main>
 
+    @php($whatsappNumber = \App\Models\SystemSetting::supportWhatsappNumber())
+    @if($whatsappNumber)
+        <a href="https://wa.me/{{ $whatsappNumber }}?text={{ rawurlencode('Halo Admin COPP Luxury, saya ingin melaporkan kendala.') }}" class="member-whatsapp-button" target="_blank" rel="noopener noreferrer" aria-label="Hubungi admin melalui WhatsApp (buka tab baru)" title="Chat admin via WhatsApp"><x-icon name="whatsapp"/></a>
+    @endif
+
     <nav class="member-bottom-nav" aria-label="Navigasi member">
         @foreach([
             ['dashboard','home','Beranda','/dashboard'],

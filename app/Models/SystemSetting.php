@@ -14,6 +14,11 @@ class SystemSetting extends Record
 
     protected $guarded = [];
 
+    public static function supportWhatsappNumber(): string
+    {
+        return (string) static::whereKey('support_whatsapp_number')->value('value');
+    }
+
     public static function depositAccount(): array
     {
         $values = static::whereIn('key', ['deposit_bank_name', 'deposit_account_number', 'deposit_account_holder'])->pluck('value', 'key');

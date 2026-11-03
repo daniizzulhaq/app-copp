@@ -1,4 +1,10 @@
 /* Member workspace: one application surface across phones, tablets, and desktop. */
+.member-whatsapp-button { position: fixed; z-index: 45; right: max(18px, calc((100vw - 480px) / 2 + 18px)); bottom: calc(88px + env(safe-area-inset-bottom, 0px)); display: grid; place-items: center; width: 56px; height: 56px; border: 2px solid #fff; border-radius: 50%; background: #25d366; color: #fff; box-shadow: 0 5px 18px #128c7e30, 0 2px 5px #00000012; transition: background-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.member-whatsapp-button:hover { background: #1ebe5d; box-shadow: 0 7px 22px #128c7e40; transform: translateY(-2px); }
+.member-whatsapp-button:focus-visible { outline: 3px solid #b8860b; outline-offset: 4px; }
+.member-whatsapp-button .icon { display: block; width: 32px; height: 32px; }
+@media (prefers-reduced-motion: reduce) { .member-whatsapp-button { transition: none; } .member-whatsapp-button:hover { transform: none; } }
+@media (min-width: 700px) { .member-whatsapp-button { bottom: 100px; } }
 .member-app {
     --member-width: 480px;
     --member-ink: #142a25;

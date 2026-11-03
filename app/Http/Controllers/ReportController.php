@@ -76,22 +76,33 @@ class ReportController extends Controller
     {
         Gate::authorize('manage');
 
-        return view('settings', ['default' => SystemSetting::whereKey('default_scenario')->value('value'), 'scenarios' => SimulationScenario::where('status', '!=', 'archived')->get(), 'bankAccount' => SystemSetting::depositAccount()]);
+        return view('settings', [
+            'default' => SystemSetting::whereKey('default_scenario')->value('value'),
+            'scenarios' => SimulationScenario::where('status', '!=', 'archived')->get(),
+            'bankAccount' => SystemSetting::depositAccount(),
+            'whatsappNumber' => SystemSetting::supportWhatsappNumber(),
+        ]);
     }
 
     public function saveSettings(Request $r)
     {
         Gate::authorize('manage');
+        $number = $r->input('support_whatsapp_number');
+        if (is_string($number) && preg_match('/^\+?[0-9 ()-]+$/D', $number)) {
+            $number = preg_replace('/\D/', '', $number);
+            $r->merge(['support_whatsapp_number' => str_starts_with($number, '0') ? '62'.substr($number, 1) : $number]);
+        }
         $d = $r->validate([
             'default_scenario' => 'required|integer|exists:simulation_scenarios,id',
+            'support_whatsapp_number' => ['nullable', 'string', 'regex:/^[1-9][0-9]{7,14}$/D'],
             'deposit_bank_name' => 'nullable|required_with:deposit_account_number,deposit_account_holder|string|max:100',
             'deposit_account_number' => 'nullable|required_with:deposit_bank_name,deposit_account_holder|string|regex:/^[0-9 -]+$/|max:50',
             'deposit_account_holder' => 'nullable|required_with:deposit_bank_name,deposit_account_number|string|max:150',
-        ]);
+        ], ['support_whatsapp_number.regex' => 'Masukkan nomor WhatsApp yang valid, misalnya 081234567890 atau +6281234567890.']);
         DB::transaction(function () use ($d) {
             $old = SystemSetting::whereKey('default_scenario')->value('value');
             SystemSetting::updateOrCreate(['key' => 'default_scenario'], ['value' => $d['default_scenario']]);
-            foreach (['deposit_bank_name', 'deposit_account_number', 'deposit_account_holder'] as $key) {
+            foreach (['support_whatsapp_number', 'deposit_bank_name', 'deposit_account_number', 'deposit_account_holder'] as $key) {
                 if (array_key_exists($key, $d)) {
                     SystemSetting::updateOrCreate(['key' => $key], ['value' => $d[$key] ?? '']);
                 }
