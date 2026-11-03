@@ -57,11 +57,12 @@ class CoppMasterPlanTest extends TestCase
         ]);
     }
 
-    public function test_reseeding_resets_test_account_passwords_without_changing_wallets_or_other_members(): void
+    public function test_reseeding_updates_admin_without_changing_wallets_or_other_members(): void
     {
         Storage::fake('local');
         $this->seed(CoppSeeder::class);
-        $accounts = User::whereIn('email', ['admin@copp.test', 'member@copp.test'])->get();
+        $accounts = User::where('email', 'admin@copp.test')->get();
+        $this->assertCount(1, $accounts);
         $otherPassword = $this->member->password;
         $userCount = User::count();
 
@@ -75,7 +76,8 @@ class CoppMasterPlanTest extends TestCase
 
         foreach ($accounts as $account) {
             $account->refresh();
-            $this->assertTrue(Hash::check('coppluxury123', $account->password));
+            $this->assertSame('Didisaidi', $account->name);
+            $this->assertTrue(Hash::check('admin123', $account->password));
             $this->assertFalse(Hash::check('PreviousPassword123', $account->password));
             $wallet = app(WalletService::class)->get($account, $this->workspace);
             $this->assertSame(100000, $wallet->balance());
@@ -240,9 +242,14 @@ class CoppMasterPlanTest extends TestCase
         $users = User::count();
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
         $this->assertSame($users, User::count());
-        $testingMember = User::where('email', 'member@copp.test')->firstOrFail();
-        $this->assertTrue($testingMember->hasRole('member'));
-        $this->assertNotNull($testingMember->email_verified_at);
+        $this->assertDatabaseMissing('users', ['email' => 'member@copp.test']);
+        $admin = User::where('email', 'admin@copp.test')->firstOrFail();
+        $this->assertSame('Didisaidi', $admin->name);
+        $this->assertTrue($admin->hasRole('super-admin'));
+        $this->assertNotNull($admin->email_verified_at);
+        $this->post('/login', ['email' => $admin->email, 'password' => 'admin123'])
+            ->assertSessionHasNoErrors()->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($admin);
         $this->assertSame(6, RoiPackage::where('active', true)->count());
         $this->assertSame(0, Investment::count());
         $this->assertSame(0, MockPaymentInvoice::count());

@@ -26,11 +26,11 @@ Master plan ini menggantikan katalog dan data contoh NexaVest sebelumnya.
 - Bonus otomatis masuk wallet melalui ledger dan dicatat dalam `member_bonuses`. ID transaksi/top up dan periode misi mencegah kredit ganda. Pengkreditan mengikuti model cadangan wallet lokal; tidak melakukan transfer bank otomatis.
 - Minimal WD Rp50.000, admin 10% dari nominal pengajuan. Contoh Rp50.000 dipotong Rp5.000 sehingga nilai transfer Rp45.000.
 
-Sumber parameter: `config/copp.php`. Seeder utama menjalankan `RoleSeeder`, `CoppSeeder`, dan `LocalWorkspaceSeeder`; hanya membuat admin dan satu member testing, tanpa transaksi atau skenario contoh.
+Sumber parameter: `config/copp.php`. Seeder utama menjalankan `RoleSeeder`, `CoppSeeder`, dan `LocalWorkspaceSeeder`; hanya membuat admin Didisaidi, enam produk COPP, dan workspace kosong, tanpa member testing, transaksi, atau skenario contoh.
 
-Akun awal: `admin@copp.test`, dengan kata sandi testing `coppluxury123` yang di-hash di database dan disimpan dalam catatan akun di `storage/app/private/copp-accounts.txt`. Menjalankan ulang `php artisan db:seed --class=CoppSeeder --force` mereset password admin dan member testing ke nilai tersebut serta memperbarui paket COPP, tanpa menghapus transaksi atau saldo. Akun yang diarsipkan tidak diaktifkan kembali.
+Akun awal: nama `Didisaidi`, email login `admin@copp.test`, dengan password awal sesuai `CoppSeeder` yang di-hash di database dan disimpan dalam catatan akun di `storage/app/private/copp-accounts.txt`. Menjalankan ulang `php artisan db:seed --class=CoppSeeder --force` memperbarui nama dan password admin serta paket COPP, tanpa menghapus transaksi atau saldo. Akun yang diarsipkan tidak diaktifkan kembali.
 
-Akun member testing: `member@copp.test`, dengan kata sandi testing `coppluxury123`, sudah terverifikasi dan memiliki role member. Catatan kata sandi berada di `storage/app/private/copp-member-account.txt`. Saldo awal Rp0; gunakan alur deposit manual untuk menguji pembelian dan ROI.
+Akun member testing tidak dibuat lagi. Untuk mengosongkan database testing di hosting, upload kode terbaru lalu jalankan `php artisan migrate:refresh --seed --force` dari folder aplikasi yang berisi `artisan`. Perintah ini menghapus seluruh data pada database aplikasi yang dikonfigurasi di server, menjalankan ulang migrasi, lalu membuat admin baru dan konfigurasi awal. Menjalankan seeder saja tidak menghapus member testing yang sudah ada.
 
 Penggantian demo lama dilakukan dengan `php scripts/reset-copp-demo.php`. Skrip hanya menerima lingkungan lokal dan akun demo NexaVest yang dikenali, membuat backup SQL lengkap di `storage/app/private/backups`, lalu mengisi database COPP baru. Skrip menolak dijalankan ulang setelah akun COPP tersedia.
 

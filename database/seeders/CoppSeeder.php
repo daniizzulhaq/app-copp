@@ -20,20 +20,13 @@ class CoppSeeder extends Seeder
             ]);
         }
         RoiPackage::where('name', 'not like', 'COPP Plan %')->update(['active' => false]);
-        $password = 'coppluxury123';
-        $admin = User::withTrashed()->firstOrNew(['email' => 'admin@copp.test'], ['name' => 'Admin COPP Luxury']);
+        $password = 'admin123';
+        $admin = User::withTrashed()->firstOrNew(['email' => 'admin@copp.test'], ['name' => 'Didisaidi']);
         if (! $admin->trashed()) {
-            $admin->forceFill(['password' => $password, 'remember_token' => null, 'email_verified_at' => $admin->email_verified_at ?? now()])->save();
+            $admin->forceFill(['name' => 'Didisaidi', 'password' => $password, 'remember_token' => null, 'email_verified_at' => $admin->email_verified_at ?? now()])->save();
             $admin->assignRole('super-admin');
             Storage::disk('local')->put('copp-accounts.txt', "COPP Luxury\nAdmin: admin@copp.test\nKata sandi: {$password}\n");
             $this->command?->info('Akun admin: storage/app/private/copp-accounts.txt');
-        }
-        $member = User::withTrashed()->firstOrNew(['email' => 'member@copp.test'], ['name' => 'Member Testing COPP']);
-        if (! $member->trashed()) {
-            $member->forceFill(['password' => $password, 'remember_token' => null, 'email_verified_at' => $member->email_verified_at ?? now()])->save();
-            $member->assignRole('member');
-            Storage::disk('local')->put('copp-member-account.txt', "COPP Luxury - Member Testing\nEmail: member@copp.test\nKata sandi: {$password}\n");
-            $this->command?->info('Akun member testing: storage/app/private/copp-member-account.txt');
         }
     }
 }
