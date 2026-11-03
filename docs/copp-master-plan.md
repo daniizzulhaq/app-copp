@@ -28,9 +28,9 @@ Master plan ini menggantikan katalog dan data contoh NexaVest sebelumnya.
 
 Sumber parameter: `config/copp.php`. Seeder utama menjalankan `RoleSeeder`, `CoppSeeder`, dan `LocalWorkspaceSeeder`; hanya membuat admin Didisaidi, enam produk COPP, dan workspace kosong, tanpa member testing, transaksi, atau skenario contoh.
 
-Akun awal: nama `Didisaidi`, email login `admin@copp.test`, dengan password awal sesuai `CoppSeeder` yang di-hash di database dan disimpan dalam catatan akun di `storage/app/private/copp-accounts.txt`. Menjalankan ulang `php artisan db:seed --class=CoppSeeder --force` memperbarui nama dan password admin serta paket COPP, tanpa menghapus transaksi atau saldo. Akun yang diarsipkan tidak diaktifkan kembali.
+Akun awal: nama `Didisaidi`, email login `admin@copp.test`, dengan password awal sesuai `AccountSeeder` yang di-hash di database dan disimpan dalam catatan akun di `storage/app/private/copp-accounts.txt`. `CoppSeeder` memanggil `AccountSeeder` setelah memperbarui paket COPP. Admin yang diarsipkan tidak diaktifkan kembali.
 
-Akun member testing tidak dibuat lagi. Untuk mengosongkan database testing di hosting, upload kode terbaru lalu jalankan `php artisan migrate:refresh --seed --force` dari folder aplikasi yang berisi `artisan`. Perintah ini menghapus seluruh data pada database aplikasi yang dikonfigurasi di server, menjalankan ulang migrasi, lalu membuat admin baru dan konfigurasi awal. Menjalankan seeder saja tidak menghapus member testing yang sudah ada.
+Untuk reset khusus akun di hosting, upload kode terbaru lalu jalankan `php artisan db:seed --class=AccountSeeder --force` dari folder aplikasi yang berisi `artisan`. Perintah ini memperbarui admin Didisaidi dan mengarsipkan akun testing `member@copp.test` jika masih ada, serta mencabut sesi dan token reset password kedua akun tersebut. Produk, pengaturan, saldo, dan riwayat transaksi dipertahankan; akun member lain tidak berubah. Akun member testing tidak dibuat lagi. Tidak perlu menjalankan `migrate:refresh` untuk memperbarui akun.
 
 Penggantian demo lama dilakukan dengan `php scripts/reset-copp-demo.php`. Skrip hanya menerima lingkungan lokal dan akun demo NexaVest yang dikenali, membuat backup SQL lengkap di `storage/app/private/backups`, lalu mengisi database COPP baru. Skrip menolak dijalankan ulang setelah akun COPP tersedia.
 

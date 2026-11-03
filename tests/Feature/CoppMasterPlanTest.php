@@ -17,8 +17,10 @@ use App\Services\ReferralService;
 use App\Services\ROIObligationService;
 use App\Services\WalletService;
 use Carbon\Carbon;
+use Database\Seeders\AccountSeeder;
 use Database\Seeders\CoppSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -57,12 +59,20 @@ class CoppMasterPlanTest extends TestCase
         ]);
     }
 
-    public function test_reseeding_updates_admin_without_changing_wallets_or_other_members(): void
+    public function test_account_reset_updates_admin_and_retires_test_member_without_changing_other_data(): void
     {
         Storage::fake('local');
         $this->seed(CoppSeeder::class);
         $accounts = User::where('email', 'admin@copp.test')->get();
         $this->assertCount(1, $accounts);
+        $testingMember = User::factory()->create(['email' => 'member@copp.test']);
+        $testingMember->assignRole('member');
+        app(WalletService::class)->creditDeposit($testingMember, $this->workspace, 50000, 'testing-member:'.$testingMember->id);
+        foreach ([$accounts->first(), $testingMember, $this->member] as $user) {
+            DB::table('sessions')->insert(['id' => 'account-reset-'.$user->id, 'user_id' => $user->id, 'payload' => '', 'last_activity' => now()->timestamp]);
+            DB::table('password_reset_tokens')->insert(['email' => $user->email, 'token' => 'previous-reset-token', 'created_at' => now()]);
+        }
+        $products = RoiPackage::orderBy('id')->get()->toArray();
         $otherPassword = $this->member->password;
         $userCount = User::count();
 
@@ -72,7 +82,7 @@ class CoppMasterPlanTest extends TestCase
         }
         $transactionCount = $this->workspace->transactions()->count();
 
-        $this->seed(CoppSeeder::class);
+        $this->seed(AccountSeeder::class);
 
         foreach ($accounts as $account) {
             $account->refresh();
@@ -82,10 +92,22 @@ class CoppMasterPlanTest extends TestCase
             $wallet = app(WalletService::class)->get($account, $this->workspace);
             $this->assertSame(100000, $wallet->balance());
         }
-        $this->assertSame($userCount, User::count());
+        $this->assertSame($userCount, User::withTrashed()->count());
         $this->assertSame($otherPassword, $this->member->refresh()->password);
+        $this->assertSame($products, RoiPackage::orderBy('id')->get()->toArray());
+        $this->assertSoftDeleted('users', ['id' => $testingMember->id]);
+        $this->assertFalse($testingMember->refresh()->active);
+        $this->assertSame(50000, app(WalletService::class)->get($testingMember, $this->workspace)->balance());
+        foreach ([$accounts->first(), $testingMember] as $user) {
+            $this->assertDatabaseMissing('sessions', ['user_id' => $user->id]);
+            $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+        }
+        $this->assertDatabaseHas('sessions', ['user_id' => $this->member->id]);
+        $this->assertDatabaseHas('password_reset_tokens', ['email' => $this->member->email]);
         $this->assertSame($transactionCount, $this->workspace->transactions()->count());
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
+        $this->seed(AccountSeeder::class);
+        $this->assertSame($userCount, User::withTrashed()->count());
     }
 
     public function test_all_six_plans_have_exact_total_roi_and_a_capped_final_day(): void

@@ -3,9 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\RoiPackage;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
 
 class CoppSeeder extends Seeder
 {
@@ -20,13 +18,6 @@ class CoppSeeder extends Seeder
             ]);
         }
         RoiPackage::where('name', 'not like', 'COPP Plan %')->update(['active' => false]);
-        $password = 'admin123';
-        $admin = User::withTrashed()->firstOrNew(['email' => 'admin@copp.test'], ['name' => 'Didisaidi']);
-        if (! $admin->trashed()) {
-            $admin->forceFill(['name' => 'Didisaidi', 'password' => $password, 'remember_token' => null, 'email_verified_at' => $admin->email_verified_at ?? now()])->save();
-            $admin->assignRole('super-admin');
-            Storage::disk('local')->put('copp-accounts.txt', "COPP Luxury\nAdmin: admin@copp.test\nKata sandi: {$password}\n");
-            $this->command?->info('Akun admin: storage/app/private/copp-accounts.txt');
-        }
+        $this->call(AccountSeeder::class);
     }
 }
