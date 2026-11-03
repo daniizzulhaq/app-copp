@@ -11,6 +11,7 @@ use App\Services\ScenarioContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -37,9 +38,14 @@ class MemberController extends Controller
     public function store(Request $r)
     {
         Gate::authorize('manage');
-        $d = $r->validate(['name' => 'required|string|max:100', 'email' => 'required|email|max:255|unique:users', 'password' => ['required', 'confirmed', Password::min(10)->mixedCase()->numbers()], 'referral' => 'nullable|string|max:12']);
+        if (is_string($r->input('username'))) {
+            $r->merge(['username' => Str::lower(trim($r->input('username')))]);
+        }
+        $d = $r->validate(['name' => 'required|string|max:100', 'email' => 'required|email|max:255|unique:users', 'password' => ['required', 'confirmed', Password::min(10)->mixedCase()->numbers()], 'referral' => 'nullable|string|max:12',
+            'username' => ['nullable', 'string', 'regex:/\A[a-z0-9_]{3,30}\z/', 'unique:users,username'],
+        ]);
         DB::transaction(function () use ($d) {
-            $u = User::create(['name' => $d['name'], 'email' => strtolower($d['email']), 'password' => $d['password']]);
+            $u = User::create(['name' => $d['name'], 'username' => $d['username'] ?? null, 'email' => strtolower($d['email']), 'password' => $d['password']]);
             $u->forceFill(['email_verified_at' => now()])->save();
             $u->assignRole('member');
             app(ReferralService::class)->attach($u, $d['referral'] ?? null);
@@ -72,15 +78,23 @@ class MemberController extends Controller
     public function update(Request $r, User $member)
     {
         Gate::authorize('update', $member);
-        $d = $r->validate(['name' => 'required|string|max:100', 'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($member->id)], 'active' => 'required|boolean']);
+        if (is_string($r->input('username'))) {
+            $r->merge(['username' => Str::lower(trim($r->input('username')))]);
+        }
+        $d = $r->validate(['name' => 'required|string|max:100', 'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($member->id)], 'active' => 'required|boolean',
+            'username' => ['nullable', 'string', 'regex:/\A[a-z0-9_]{3,30}\z/', Rule::unique('users', 'username')->ignore($member->id)],
+        ]);
         DB::transaction(function () use ($member, $d) {
-            $before = $member->only('name', 'email', 'active');
+            $before = $member->only('name', 'email', 'username', 'active');
             $member->fill(['name' => $d['name'], 'email' => strtolower($d['email'])]);
+            if (array_key_exists('username', $d)) {
+                $member->username = $d['username'];
+            }
             $member->active = (bool) $d['active'];
             $member->save();
             if (! $member->active) {
                 DB::table('sessions')->where('user_id', $member->id)->delete();
-            } app(AuditService::class)->record('member.updated', $member, $before, $member->only('name', 'email', 'active'));
+            } app(AuditService::class)->record('member.updated', $member, $before, $member->only('name', 'email', 'username', 'active'));
         });
 
         return redirect('/members/'.$member->id)->with('status', 'Member diperbarui.');

@@ -23,15 +23,17 @@ class AuthController extends Controller
 {
     public function login(Request $r)
     {
-        $d = $r->validate(['email' => 'required|email|max:255', 'password' => 'required|string']);
-        $key = 'login:'.Str::lower($d['email']).'|'.$r->ip();
+        $d = $r->validate(['email' => 'required|string|max:255', 'password' => 'required|string']);
+        $identifier = Str::lower(trim($d['email']));
+        $field = str_contains($identifier, '@') ? 'email' : 'username';
+        $u = User::whereRaw('LOWER('.$field.') = ?', [$identifier])->where('active', true)->first();
+        $key = 'login:'.($u ? 'user:'.$u->id : $identifier).'|'.$r->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages(['email' => 'Terlalu banyak percobaan. Coba dalam '.RateLimiter::availableIn($key).' detik.']);
         }
         RateLimiter::hit($key, 60);
-        $u = User::where('email', Str::lower($d['email']))->where('active', true)->first();
         if (! $u || ! Hash::check($d['password'], $u->password)) {
-            throw ValidationException::withMessages(['email' => 'Email atau kata sandi tidak sesuai.']);
+            throw ValidationException::withMessages(['email' => 'Email, username, atau kata sandi tidak sesuai.']);
         }
         Auth::login($u, $r->boolean('remember'));
         $r->session()->regenerate();
@@ -43,10 +45,14 @@ class AuthController extends Controller
 
     public function register(Request $r)
     {
+        if (is_string($r->input('username'))) {
+            $r->merge(['username' => Str::lower(trim($r->input('username')))]);
+        }
         $d = $r->validate(['name' => 'required|string|max:100', 'email' => 'required|email|max:255|unique:users', 'password' => ['required', 'confirmed', PasswordRule::min(10)->mixedCase()->numbers()],
+            'username' => ['nullable', 'string', 'regex:/\A[a-z0-9_]{3,30}\z/', 'unique:users,username'],
             'referral' => 'nullable|string|max:12']);
         $u = DB::transaction(function () use ($d) {
-            $u = User::create(['name' => $d['name'], 'email' => Str::lower($d['email']), 'password' => $d['password']]);
+            $u = User::create(['name' => $d['name'], 'username' => $d['username'] ?? null, 'email' => Str::lower($d['email']), 'password' => $d['password']]);
             $u->assignRole('member');
             app(ReferralService::class)->attach($u, $d['referral'] ?? null);
             $u->notify(new SimulationNotification('Selamat datang di COPP Luxury', 'Akun Anda sudah aktif dan bisa langsung digunakan.'));

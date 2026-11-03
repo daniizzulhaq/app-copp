@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -63,9 +64,15 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
     ];
+
+    protected function username(): Attribute
+    {
+        return Attribute::make(set: fn ($value) => filled($value) ? Str::lower(trim($value)) : null);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

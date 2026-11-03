@@ -19,14 +19,25 @@ class ProfileController extends Controller
 
     public function update(Request $r)
     {
-        $d = $r->validate(['name' => 'required|string|max:100', 'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($r->user()->id)]]);
+        if (is_string($r->input('username'))) {
+            $r->merge(['username' => Str::lower(trim($r->input('username')))]);
+        }
+        $d = $r->validate([
+            'name' => 'required|string|max:100',
+            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($r->user()->id)],
+            'username' => ['nullable', 'string', 'regex:/\A[a-z0-9_]{3,30}\z/', Rule::unique('users', 'username')->ignore($r->user()->id)],
+        ]);
         $u = $r->user();
-        $before = $u->only('name', 'email');
+        $before = $u->only('name', 'email', 'username');
         if ($u->email !== strtolower($d['email'])) {
             $u->email_verified_at = null;
         }
-        $u->fill(['name' => $d['name'], 'email' => strtolower($d['email'])])->save();
-        app(AuditService::class)->record('profile.updated', $u, $before, $u->only('name', 'email'));
+        $u->fill(['name' => $d['name'], 'email' => strtolower($d['email'])]);
+        if (array_key_exists('username', $d)) {
+            $u->username = $d['username'];
+        }
+        $u->save();
+        app(AuditService::class)->record('profile.updated', $u, $before, $u->only('name', 'email', 'username'));
 
         return back()->with('status', 'Profil diperbarui.');
     }

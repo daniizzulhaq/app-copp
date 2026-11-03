@@ -15,15 +15,27 @@ class AccountSeeder extends Seeder
         $password = 'admin123';
 
         $admin = DB::transaction(function () use ($password) {
-            $admin = User::withTrashed()->firstOrNew(['email' => 'admin@copp.test']);
+            $admins = User::withTrashed()->whereIn('email', ['admin@copp.test', 'admin@copp.production'])->lockForUpdate()->get();
+            if ($admins->count() > 1) {
+                throw new \RuntimeException('Ada dua akun admin lama dan baru. Periksa keduanya sebelum menjalankan AccountSeeder.');
+            }
+            $admin = $admins->first() ?? new User;
+            if ($admin->exists && ! $admin->isStaff()) {
+                throw new \RuntimeException('Email admin digunakan akun yang tidak memiliki role admin.');
+            }
+            if (User::withTrashed()->where('username', 'didisaidi')->when($admin->exists, fn ($query) => $query->whereKeyNot($admin->id))->exists()) {
+                throw new \RuntimeException('Username Didisaidi sudah digunakan akun lain.');
+            }
+            $oldEmail = $admin->email;
             if (! $admin->trashed()) {
                 $admin->forceFill([
-                    'name' => 'Didisaidi', 'password' => $password, 'remember_token' => null,
+                    'name' => 'Didisaidi', 'username' => 'didisaidi', 'email' => 'admin@copp.production',
+                    'password' => $password, 'remember_token' => null,
                     'active' => true, 'email_verified_at' => $admin->email_verified_at ?? now(),
                 ])->save();
                 $admin->assignRole('super-admin');
                 DB::table('sessions')->where('user_id', $admin->id)->delete();
-                DB::table('password_reset_tokens')->where('email', $admin->email)->delete();
+                DB::table('password_reset_tokens')->whereIn('email', array_filter([$oldEmail, $admin->email]))->delete();
             }
 
             // Archive only the original test member; retain financial references.
@@ -41,7 +53,7 @@ class AccountSeeder extends Seeder
         });
 
         if (! $admin->trashed()) {
-            Storage::disk('local')->put('copp-accounts.txt', "COPP Luxury\nNama: Didisaidi\nAdmin: admin@copp.test\nKata sandi: {$password}\n");
+            Storage::disk('local')->put('copp-accounts.txt', "COPP Luxury\nNama: Didisaidi\nUsername: Didisaidi\nAdmin: admin@copp.production\nKata sandi: {$password}\n");
             $this->command?->info('Akun admin diperbarui. Catatan: storage/app/private/copp-accounts.txt');
         }
     }

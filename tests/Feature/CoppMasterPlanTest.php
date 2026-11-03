@@ -63,7 +63,7 @@ class CoppMasterPlanTest extends TestCase
     {
         Storage::fake('local');
         $this->seed(CoppSeeder::class);
-        $accounts = User::where('email', 'admin@copp.test')->get();
+        $accounts = User::where('email', 'admin@copp.production')->get();
         $this->assertCount(1, $accounts);
         $testingMember = User::factory()->create(['email' => 'member@copp.test']);
         $testingMember->assignRole('member');
@@ -265,7 +265,7 @@ class CoppMasterPlanTest extends TestCase
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
         $this->assertSame($users, User::count());
         $this->assertDatabaseMissing('users', ['email' => 'member@copp.test']);
-        $admin = User::where('email', 'admin@copp.test')->firstOrFail();
+        $admin = User::where('email', 'admin@copp.production')->firstOrFail();
         $this->assertSame('Didisaidi', $admin->name);
         $this->assertTrue($admin->hasRole('super-admin'));
         $this->assertNotNull($admin->email_verified_at);

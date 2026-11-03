@@ -4,7 +4,8 @@
 <form method="post" action="/register" class="stack">
     @csrf
     <x-field name="name" label="Nama lengkap" required autocomplete="name"/>
-    <x-field name="email" label="Alamat email" type="email" required autocomplete="username"/>
+    <x-field name="username" label="Username (opsional)" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" hint="3–30 karakter: huruf, angka, atau garis bawah. Bisa digunakan untuk login."/>
+    <x-field name="email" label="Alamat email" type="email" required autocomplete="email"/>
     <x-field name="password" label="Kata sandi" type="password" required autocomplete="new-password" hint="Minimal 10 karakter, huruf besar, huruf kecil, dan angka."/>
     <x-field name="password_confirmation" label="Ulangi kata sandi" type="password" required autocomplete="new-password"/>
     <x-field name="referral" label="Kode referral (opsional)" :value="request('ref')" maxlength="12"/>
