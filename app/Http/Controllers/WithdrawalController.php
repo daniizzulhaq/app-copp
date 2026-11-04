@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\WithdrawalFormRequest;
+use App\Models\SystemSetting;
 use App\Models\WithdrawalRequest;
 use App\Services\ScenarioContext;
 use App\Services\WithdrawalSimulationService;
@@ -21,8 +22,9 @@ class WithdrawalController extends Controller
             ->orderBy('id', $r->sort === 'asc' ? 'asc' : 'desc')->paginate(15)->withQueryString();
 
         $hasPurchasedProduct = $r->user()->hasPurchasedProduct($s->id);
+        $minimumWithdrawalAmount = SystemSetting::minimumWithdrawalAmount();
 
-        return view('withdrawals', compact('s', 'withdrawals', 'hasPurchasedProduct'));
+        return view('withdrawals', compact('s', 'withdrawals', 'hasPurchasedProduct', 'minimumWithdrawalAmount'));
     }
 
     public function store(WithdrawalFormRequest $r, ScenarioContext $context, WithdrawalSimulationService $service)

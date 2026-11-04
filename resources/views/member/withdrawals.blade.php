@@ -17,8 +17,8 @@
         @csrf
         <input name="request_key" type="hidden" value="{{ old('request_key',(string)\Illuminate\Support\Str::uuid()) }}">
         <input name="method" type="hidden" value="bank_transfer">
-        <x-field name="amount" label="Nominal withdrawal (Rp)" type="number" min="50000" max="1000000000" required inputmode="numeric" placeholder="Contoh: 50000"/>
-        <p class="notice">Minimum WD Rp50.000. Biaya admin 10% dipotong dari nominal pengajuan. Contoh: WD Rp50.000, admin Rp5.000, diterima Rp45.000.</p>
+        <x-field name="amount" label="Nominal withdrawal (Rp)" type="number" :min="$minimumWithdrawalAmount" max="1000000000" required inputmode="numeric" :placeholder="'Contoh: '.$minimumWithdrawalAmount"/>
+        <p class="notice">Minimum WD {{ \App\Support\Money::rupiah($minimumWithdrawalAmount) }}. Biaya admin 10% dipotong dari nominal pengajuan. Contoh: WD {{ \App\Support\Money::rupiah($minimumWithdrawalAmount) }}, admin {{ \App\Support\Money::rupiah(\App\Support\Money::rate($minimumWithdrawalAmount, 1000)) }}, diterima {{ \App\Support\Money::rupiah($minimumWithdrawalAmount - \App\Support\Money::rate($minimumWithdrawalAmount, 1000)) }}.</p>
         <x-field name="note" label="Catatan (opsional)" maxlength="500" placeholder="Tambahkan catatan pengajuan"/>
         <div class="member-inline-note"><x-icon name="shield"/><p>Periksa rekening tujuan sebelum mengirim. Jika pengajuan ditolak, saldo dikembalikan ke wallet.</p></div>
         <button class="btn btn-primary btn-full" @disabled(!$hasPurchasedProduct || !auth()->user()->hasBankAccount())>Ajukan penarikan <x-icon name="up"/></button>

@@ -14,6 +14,11 @@ class SystemSetting extends Record
 
     protected $guarded = [];
 
+    public static function minimumWithdrawalAmount(): int
+    {
+        return (int) (static::whereKey('minimum_withdrawal_amount')->value('value') ?? 50000);
+    }
+
     public static function supportWhatsappNumber(): string
     {
         return (string) static::whereKey('support_whatsapp_number')->value('value');

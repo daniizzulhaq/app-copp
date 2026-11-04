@@ -2,12 +2,14 @@
 @section('title','Pengaturan aplikasi')
 @section('content')
 <div class="page-heading">
-    <div><p class="eyebrow">WORKSPACE SETTINGS</p><h1>Pengaturan aplikasi<span class="heading-dot">.</span></h1><p>Kelola kontak WhatsApp admin, rekening deposit, dan skenario default.</p></div>
+    <div><p class="eyebrow">WORKSPACE SETTINGS</p><h1>Pengaturan aplikasi<span class="heading-dot">.</span></h1><p>Kelola minimal WD, kontak WhatsApp admin, rekening deposit, dan skenario default.</p></div>
     <div class="button-row"><a href="{{ route('settings.deposit-methods') }}" class="btn btn-secondary">Metode deposit QRIS</a><a href="{{ route('settings.landing-content') }}" class="btn btn-secondary">Edit artikel landing page</a></div>
 </div>
 <section class="panel padded-panel narrow">
     <form method="post" action="/settings" class="stack">
         @csrf @method('put')
+        <h2>Penarikan saldo</h2>
+        <x-field name="minimum_withdrawal_amount" label="Minimal WD (Rp)" type="number" :value="$minimumWithdrawalAmount" min="1" max="1000000000" step="1" required inputmode="numeric" hint="Batas minimal nominal pengajuan sebelum potongan biaya admin. Berlaku untuk pengajuan baru setelah pengaturan disimpan."/>
         <h2>WhatsApp admin</h2>
         <x-field name="support_whatsapp_number" label="Nomor WhatsApp admin" type="tel" :value="$whatsappNumber" maxlength="40" autocomplete="tel" placeholder="Contoh: 081234567890" hint="Member yang menekan ikon WhatsApp akan diarahkan ke nomor ini. Bisa pakai 08 atau +62. Kosongkan untuk menyembunyikan ikon."/>
         <h2>Skenario default</h2>

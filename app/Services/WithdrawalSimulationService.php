@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\SimulatedPayout;
 use App\Models\SimulationScenario;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\WithdrawalRequest;
 use App\Notifications\SimulationNotification;
@@ -27,8 +28,9 @@ class WithdrawalSimulationService
             if ($s->status === 'archived') {
                 throw ValidationException::withMessages(['scenario' => 'Skenario diarsipkan. Pilih skenario aktif untuk transaksi baru.']);
             }
-            if ($amount < 50000 || $amount > 1000000000) {
-                throw ValidationException::withMessages(['amount' => 'WD minimal Rp50.000 dan maksimal Rp1.000.000.000.']);
+            $minimumAmount = SystemSetting::minimumWithdrawalAmount();
+            if ($amount < $minimumAmount || $amount > 1000000000) {
+                throw ValidationException::withMessages(['amount' => 'WD minimal '.Money::rupiah($minimumAmount).' dan maksimal Rp1.000.000.000.']);
             }
             if (! $user->hasPurchasedProduct($s->id)) {
                 throw ValidationException::withMessages(['product' => 'Beli minimal satu produk terlebih dahulu sebelum mengajukan penarikan.']);
