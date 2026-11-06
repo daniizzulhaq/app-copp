@@ -12,6 +12,7 @@ Master plan ini menggantikan katalog dan data contoh NexaVest sebelumnya.
 | Rp5.000.000 | 10% | 400% | 40 hari |
 
 - Nominal pembelian sama dengan harga plan. Batas tiga pembelian berlaku per produk per akun, termasuk pembelian yang sudah selesai dan lintas workspace.
+- Harga produk ditentukan admin, mulai Rp1; pembelian tidak memiliki batas minimum global Rp100.000. Form mengikuti harga atau minimum produk yang dipilih. Produk dengan nominal tetap harus dibeli sesuai harga, sedangkan produk dengan pilihan mulai dari minimum dapat dibeli sebesar minimum produk atau lebih.
 - Total ROI adalah hasil ROI saja, dengan modal dikembalikan terpisah dan penuh ke saldo web. Periode dihitung dengan pembulatan ke atas dari total ROI / ROI harian. Hari terakhir dipotong sesuai sisa batas total; plan Rp500.000 menghasilkan maksimal Rp1.500.000 ROI, bukan Rp1.505.000.
 - Rate, durasi, batas harian, dan batas total disimpan saat pembelian. Edit produk tidak mengubah portofolio lama.
 - Mekanisme klaim harian tetap berlaku: hari pertama sehari setelah pembelian, harus diklaim pada tanggal jatuh tempo, dan hak yang tidak diklaim hangus. Nilai hangus tetap dihitung dalam batas total ROI.
@@ -20,8 +21,8 @@ Master plan ini menggantikan katalog dan data contoh NexaVest sebelumnya.
 - Pencatatan tetap memakai jurnal seimbang dan riwayat permanen. Akun `wallet-offset` hanya menjadi pasangan pencatatan saldo web, dengan saldo yang dapat positif/negatif dan tidak berfungsi sebagai batas pembayaran. Saldo wallet member tetap tidak boleh negatif. Histori lama tidak dihapus atau ditulis ulang. Modul eksperimen terpisah (`mode=simulation`) mempertahankan perilaku simulasinya.
 - Jaringan matahari berarti jumlah referral langsung tidak dibatasi. Komisi berjalan sampai 15 tingkat ke atas tanpa penempatan binary/matrix.
 - Dasar komisi adalah nominal setiap top up manual yang disetujui admin: level 1 sebesar 15%, level 2 sebesar 3%, level 3–5 masing-masing 2%, level 6–15 masing-masing 1%. Top up yang ditolak, dibatalkan, kedaluwarsa, atau belum disetujui tidak dihitung.
-- Misi menggunakan referral langsung. Target registrasi menghitung akun baru yang terhubung lewat kode referral pada hari itu. Target top up menghitung akun unik yang top up-nya disetujui hari itu; banyak top up satu akun tetap satu akun.
-- Seluruh target kumulatif: target 15 registrasi membayar Rp5.000 + Rp15.000, dan target 15 akun top up membayar Rp25.000 + Rp100.000. Setiap target dibayar sekali per akun per tanggal WIB.
+- Misi menggunakan referral langsung. Target registrasi menghitung seluruh akun yang terhubung lewat kode referral, tanpa reset harian. Setiap target undang akun (3 dan 15 akun) dibayar hanya sekali per akun, termasuk lintas workspace. Bonus registrasi lama yang sudah dibayar dengan aturan harian tetap dianggap sudah diklaim; histori dan saldo tidak ditulis ulang.
+- Seluruh target kumulatif: target 15 registrasi membayar Rp5.000 + Rp15.000, masing-masing hanya 1x per akun. Target top up tetap harian (WIB), menghitung akun unik yang top up-nya disetujui hari itu; banyak top up satu akun tetap satu akun. Target 15 akun top up membayar Rp25.000 + Rp100.000, masing-masing sekali per akun per tanggal WIB.
 - Misi omset memakai total top up referral langsung yang disetujui. Target Rp100.000/Rp5.000.000/Rp25.000.000 membayar Rp2.000/Rp20.000/Rp150.000, masing-masing sekali per akun.
 - Bonus otomatis masuk wallet melalui ledger dan dicatat dalam `member_bonuses`. ID transaksi/top up dan periode misi mencegah kredit ganda. Pengkreditan mengikuti model cadangan wallet lokal; tidak melakukan transfer bank otomatis.
 - Minimal WD Rp50.000, admin 10% dari nominal pengajuan. Contoh Rp50.000 dipotong Rp5.000 sehingga nilai transfer Rp45.000.

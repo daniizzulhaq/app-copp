@@ -55,7 +55,7 @@ class MemberBonusService
         $topups = MockPaymentInvoice::where('simulation_scenario_id', $s->id)->whereIn('user_id', $ids)
             ->where('workflow', 'manual_local')->where('status', 'paid_local');
         return [
-            'registrations' => Referral::where('referrer_id', $user->id)->whereDate('created_at', today())->count(),
+            'registrations' => Referral::where('referrer_id', $user->id)->count(),
             'topups' => (clone $topups)->whereDate('paid_at', today())->distinct()->count('user_id'),
             'turnover' => (int) $topups->sum('amount'),
         ];
@@ -68,11 +68,18 @@ class MemberBonusService
             if (! $s->isLocal() || $s->status === 'archived' || ! $user->active || $user->is_cohort) {
                 return;
             }
+            // Lifetime rewards belong to the account, including across workspaces.
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             $progress = $this->progress($user, $s);
             foreach (config('copp.missions') as $code => $mission) {
                 if ($progress[$mission['metric']] >= $mission['target']) {
+                    $key = 'mission:'.$user->id.':'.$code;
+                    // A dated bonus paid under the old daily rules also fulfills this target.
+                    if (! $mission['daily'] && MemberBonus::where('bonus_key', 'like', $key.':%')->exists()) {
+                        continue;
+                    }
                     $period = $mission['daily'] ? today()->toDateString() : 'once';
-                    $this->award($user, $s, 'mission:'.$user->id.':'.$code.':'.$period,
+                    $this->award($user, $s, $key.':'.$period,
                         'mission_bonus', $mission['label'], $mission['reward']);
                 }
             }

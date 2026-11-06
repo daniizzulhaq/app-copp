@@ -53,19 +53,20 @@ document.querySelectorAll('[data-amount]').forEach(button=>button.addEventListen
     input.value=button.dataset.amount; input.dispatchEvent(new Event('input',{bubbles:true}));
     button.closest('form').querySelectorAll('[data-amount]').forEach(option=>option.setAttribute('aria-pressed',String(option===button)));
 }));
-const packagePicker=document.querySelector('.member-app [name="roi_package_id"]');
-const syncPackage=()=>{
-    if(!packagePicker) return;
-    document.querySelectorAll('[data-package-terms]').forEach(terms=>{terms.hidden=terms.dataset.packageTerms!==packagePicker.value;});
-    const option=packagePicker.selectedOptions[0], amount=packagePicker.form?.querySelector('[name="amount"]');
-    if(amount && option?.dataset.price){
-        amount.min=option.dataset.price;
-        amount.readOnly=option.dataset.fixed==='1';
-        if(amount.readOnly) amount.value=option.dataset.price;
-    }
-};
-packagePicker?.addEventListener('change',syncPackage);
-syncPackage();
+document.querySelectorAll('[data-package-picker]').forEach(packagePicker=>{
+    const syncPackage=()=>{
+        const form=packagePicker.form;
+        form?.querySelectorAll('[data-package-terms]').forEach(terms=>{terms.hidden=terms.dataset.packageTerms!==packagePicker.value;});
+        const option=packagePicker.selectedOptions[0], amount=form?.querySelector('[name="amount"]');
+        if(amount && option?.dataset.price){
+            amount.min=option.dataset.price;
+            amount.readOnly=option.dataset.fixed==='1';
+            if(amount.readOnly || !amount.value || Number(amount.value)<Number(option.dataset.price)) amount.value=option.dataset.price;
+        }
+    };
+    packagePicker.addEventListener('change',syncPackage);
+    syncPackage();
+});
 document.querySelectorAll('.member-app .table-wrap table').forEach(table=>{
     const labels=[...table.querySelectorAll('thead th')].map(header=>header.textContent.trim());
     table.querySelectorAll('tbody tr').forEach(row=>[...row.children].forEach((cell,index)=>{if(cell.colSpan===1)cell.dataset.label=labels[index]||'';}));

@@ -13,6 +13,6 @@ class InvestmentRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['amount' => 'required|integer|min:100000|max:1000000000', 'roi_package_id' => 'required|integer|exists:roi_packages,id', 'request_key' => 'required|uuid'];
+        return ['amount' => 'required|integer|min:1|max:1000000000', 'roi_package_id' => 'required|integer|exists:roi_packages,id', 'request_key' => 'required|uuid'];
     }
 }

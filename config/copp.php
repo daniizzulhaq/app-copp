@@ -13,8 +13,9 @@ return [
     'referral_rates_bps' => [1 => 1500, 2 => 300, 3 => 200, 4 => 200, 5 => 200,
         6 => 100, 7 => 100, 8 => 100, 9 => 100, 10 => 100, 11 => 100, 12 => 100, 13 => 100, 14 => 100, 15 => 100],
     'missions' => [
-        'daily_registration_3' => ['label' => 'Undang 3 akun baru', 'metric' => 'registrations', 'target' => 3, 'reward' => 5000, 'daily' => true],
-        'daily_registration_15' => ['label' => 'Undang 15 akun baru', 'metric' => 'registrations', 'target' => 15, 'reward' => 15000, 'daily' => true],
+        // Keep the registration codes so historical daily bonuses still count as claimed.
+        'daily_registration_3' => ['label' => 'Undang 3 akun baru', 'metric' => 'registrations', 'target' => 3, 'reward' => 5000, 'daily' => false],
+        'daily_registration_15' => ['label' => 'Undang 15 akun baru', 'metric' => 'registrations', 'target' => 15, 'reward' => 15000, 'daily' => false],
         'daily_topup_5' => ['label' => '5 referral top up', 'metric' => 'topups', 'target' => 5, 'reward' => 25000, 'daily' => true],
         'daily_topup_15' => ['label' => '15 referral top up', 'metric' => 'topups', 'target' => 15, 'reward' => 100000, 'daily' => true],
         'turnover_100000' => ['label' => 'Omset referral Rp100.000', 'metric' => 'turnover', 'target' => 100000, 'reward' => 2000, 'daily' => false],

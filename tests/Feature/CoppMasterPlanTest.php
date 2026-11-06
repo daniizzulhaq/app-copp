@@ -184,7 +184,7 @@ class CoppMasterPlanTest extends TestCase
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
 
-    public function test_missions_are_cumulative_count_unique_topup_members_and_reset_daily(): void
+    public function test_missions_are_cumulative_and_only_topup_targets_reset_daily(): void
     {
         $children = [];
         for ($n = 0; $n < 15; $n++) {
@@ -207,13 +207,80 @@ class CoppMasterPlanTest extends TestCase
         $service->missions($this->member, $this->workspace);
         $this->assertSame(7, MemberBonus::where('kind', 'mission_bonus')->count());
         $this->travelTo(now()->addDay());
-        $this->assertSame(0, $service->progress($this->member, $this->workspace)['registrations']);
+        $this->assertSame(15, $service->progress($this->member, $this->workspace)['registrations']);
         $this->assertSame(0, $service->progress($this->member, $this->workspace)['topups']);
+        $service->missions($this->member, $this->workspace);
+        $this->assertSame(7, MemberBonus::where('kind', 'mission_bonus')->count());
         foreach (array_slice($children, 0, 5) as $child) {
             $service->topup($this->invoice($child));
         }
         $this->assertSame(8, MemberBonus::where('kind', 'mission_bonus')->count());
         $this->assertSame(342000, (int) MemberBonus::where('kind', 'mission_bonus')->sum('amount'));
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
+    }
+
+    public function test_invitation_targets_accumulate_across_days_and_pay_once_per_account(): void
+    {
+        $service = app(MemberBonusService::class);
+        foreach ([2, 1, 12, 15] as $day => $newReferrals) {
+            $this->travelTo(Carbon::parse('2026-11-01 10:00:00', 'Asia/Jakarta')->addDays($day));
+            for ($n = 0; $n < $newReferrals; $n++) {
+                $child = User::factory()->create();
+                Referral::create(['referrer_id' => $this->member->id, 'referred_id' => $child->id, 'points' => 0]);
+            }
+            $service->missions($this->member, $this->workspace);
+            $service->missions($this->member, $this->workspace);
+            $this->assertSame([0, 5000, 20000, 20000][$day], (int) MemberBonus::where('user_id', $this->member->id)->sum('amount'));
+        }
+
+        $this->assertSame(30, $service->progress($this->member, $this->workspace)['registrations']);
+        $this->assertSame(2, MemberBonus::where('user_id', $this->member->id)->count());
+        $this->assertSame(20000, app(WalletService::class)->get($this->member, $this->workspace)->balance());
+        $other = SimulationScenario::factory()->create(['mode' => 'local', 'status' => 'running']);
+        $service->missions($this->member, $other);
+        $this->assertSame(2, MemberBonus::where('user_id', $this->member->id)->count());
+        $this->assertSame(0, app(WalletService::class)->get($this->member, $other)->balance());
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($other));
+
+        $this->actingAs($this->member)->withSession(['scenario_id' => $this->workspace->id])
+            ->get('/referrals')->assertOk()
+            ->assertSee('Total undangan diakumulasi dan tidak direset setiap hari.')
+            ->assertSeeInOrder(['Sekali saja', 'Undang 3 akun baru', 'Sekali saja', 'Undang 15 akun baru', 'Harian', '5 referral top up']);
+    }
+
+    public function test_legacy_daily_invitation_rewards_count_as_claimed_for_each_target(): void
+    {
+        $service = app(MemberBonusService::class);
+        // Cover both a partially completed and a fully completed set of legacy targets.
+        foreach ([3, 15] as $initialReferrals) {
+            $user = User::factory()->create();
+            config(['copp.missions.daily_registration_3.daily' => true, 'copp.missions.daily_registration_15.daily' => true]);
+            for ($n = 0; $n < $initialReferrals; $n++) {
+                $child = User::factory()->create();
+                Referral::create(['referrer_id' => $user->id, 'referred_id' => $child->id, 'points' => 0]);
+            }
+            $legacyDate = today()->toDateString();
+            $service->missions($user, $this->workspace);
+            $this->assertDatabaseHas('member_bonuses', ['bonus_key' => 'mission:'.$user->id.':daily_registration_3:'.$legacyDate]);
+
+            config(['copp.missions.daily_registration_3.daily' => false, 'copp.missions.daily_registration_15.daily' => false]);
+            $this->travelTo(now()->addDay());
+            $service->missions($user, $this->workspace);
+            $this->assertSame($initialReferrals === 3 ? 5000 : 20000, (int) MemberBonus::where('user_id', $user->id)->sum('amount'));
+            for ($n = $initialReferrals; $n < 15; $n++) {
+                $child = User::factory()->create();
+                Referral::create(['referrer_id' => $user->id, 'referred_id' => $child->id, 'points' => 0]);
+            }
+            $service->missions($user, $this->workspace);
+            $other = SimulationScenario::factory()->create(['mode' => 'local', 'status' => 'running']);
+            $service->missions($user, $other);
+            $this->assertSame(2, MemberBonus::where('user_id', $user->id)->count());
+            $this->assertSame(20000, app(WalletService::class)->get($user, $this->workspace)->balance());
+            $this->assertSame(0, app(WalletService::class)->get($user, $other)->balance());
+            $this->assertDatabaseHas('member_bonuses', ['bonus_key' => 'mission:'.$user->id.':daily_registration_3:'.$legacyDate]);
+            $this->assertSame([], app(LedgerIntegrityService::class)->check($other));
+        }
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
 
