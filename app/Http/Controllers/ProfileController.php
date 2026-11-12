@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\AuditService;
+use App\Support\WithdrawalDestination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -45,12 +46,8 @@ class ProfileController extends Controller
     public function bankAccount(Request $r)
     {
         Gate::authorize('transact');
-        $r->merge(['bank_account_number' => preg_replace('/[\s-]+/u', '', (string) $r->input('bank_account_number'))]);
-        $data = $r->validate([
-            'bank_name' => 'required|string|max:100',
-            'bank_account_number' => 'required|string|regex:/^[0-9]{5,34}$/',
-            'bank_account_holder' => 'required|string|max:150',
-        ], ['bank_account_number.regex' => 'Nomor rekening harus berisi 5–34 digit angka.']);
+        $r->merge(WithdrawalDestination::normalize($r->only(WithdrawalDestination::FIELDS)));
+        $data = $r->validate(WithdrawalDestination::rules($r->user()->bank_name), WithdrawalDestination::messages());
         DB::transaction(function () use ($r, $data) {
             $user = $r->user()->newQuery()->whereKey($r->user()->id)->lockForUpdate()->firstOrFail();
             $user->forceFill($data)->save();
@@ -60,7 +57,7 @@ class ProfileController extends Controller
             ]);
         });
 
-        return back()->with('status', 'Rekening bank disimpan. Rekening ini digunakan untuk pengajuan withdrawal berikutnya.');
+        return back()->with('status', 'Tujuan WD disimpan. Bank atau e-wallet ini akan diisikan pada pengajuan withdrawal berikutnya.');
     }
 
     public function password(Request $r)

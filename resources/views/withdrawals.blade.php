@@ -2,7 +2,7 @@
 @section('title','Withdrawal')
 @section('content')
 @if(auth()->user()->isStaff())
-    <div class="page-heading"><div><p class="eyebrow">WITHDRAWALS</p><h1>Withdrawal<span class="heading-dot">.</span></h1><p>Transfer manual ke rekening tujuan pada pengajuan, lalu tandai selesai setelah transfer berhasil.</p></div><span class="tag">{{ \App\Support\UiText::local($s->name) }}</span></div>
+    <div class="page-heading"><div><p class="eyebrow">WITHDRAWALS</p><h1>Withdrawal<span class="heading-dot">.</span></h1><p>Transfer manual ke bank atau e-wallet tujuan pada pengajuan, lalu tandai selesai setelah transfer berhasil.</p></div><span class="tag">{{ \App\Support\UiText::local($s->name) }}</span></div>
     <section class="panel">
         <div class="panel-heading">
             <h2>Daftar permintaan</h2>
@@ -14,7 +14,7 @@
             </form>
         </div>
         <div class="table-wrap"><table>
-            <thead><tr><th>Permintaan</th><th>Member</th><th class="num">Nominal</th><th>Rekening tujuan / catatan</th><th>Status</th><th>Tindakan</th></tr></thead>
+            <thead><tr><th>Permintaan</th><th>Member</th><th class="num">Nominal</th><th>Bank / E-Wallet tujuan / catatan</th><th>Status</th><th>Tindakan</th></tr></thead>
             <tbody>
                 @forelse($withdrawals as $w)
                     <tr>

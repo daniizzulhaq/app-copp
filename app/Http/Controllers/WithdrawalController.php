@@ -7,6 +7,7 @@ use App\Models\SystemSetting;
 use App\Models\WithdrawalRequest;
 use App\Services\ScenarioContext;
 use App\Services\WithdrawalSimulationService;
+use App\Support\WithdrawalDestination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -29,7 +30,8 @@ class WithdrawalController extends Controller
 
     public function store(WithdrawalFormRequest $r, ScenarioContext $context, WithdrawalSimulationService $service)
     {
-        $service->request($r->user(), $context->resolve($r), (int) $r->amount, $r->method, $r->note, $r->request_key);
+        $service->request($r->user(), $context->resolve($r), (int) $r->amount, $r->method, $r->note, $r->request_key,
+            $r->safe()->only(WithdrawalDestination::FIELDS));
 
         return back()->with('status', 'Withdrawal diajukan. Saldo ditahan sementara hingga admin menyelesaikan transfer.');
     }

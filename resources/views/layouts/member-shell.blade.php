@@ -18,6 +18,7 @@
     </header>
 
     <main id="main" class="member-content">
+        @include('member.withdrawal-ticker')
         @if(session('status'))
             <div class="toast" role="status" x-data="{show:true}" x-show="show"><x-icon name="shield"/><span>{{ \App\Support\UiText::local(session('status')) }}</span><button type="button" @click="show=false" aria-label="Tutup pesan">×</button></div>
         @endif

@@ -62,6 +62,27 @@
 .member-avatar-button { width: 42px; height: 42px; border: 3px solid white; outline: 1px solid #dcece1; border-radius: 50%; background: #d4eddc; color: #276442; font-size: 16px; font-weight: 700; flex-shrink: 0; }
 .member-unread-dot { position: absolute; right: 11px; top: 9px; width: 7px; height: 7px; background: #f59e0b; border: 2px solid white; border-radius: 50%; }
 .member-content { padding: 16px 22px calc(104px + env(safe-area-inset-bottom, 0px)); }
+.member-wd-ticker { min-width: 0; margin-bottom: 20px; padding: 12px 0; overflow: hidden; border: 1px solid #e8dbb8; border-radius: 14px; background: linear-gradient(110deg, #fffbef, #fffdf7); }
+.member-wd-ticker-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 13px 9px; }
+.member-wd-ticker-heading > span { display: inline-flex; align-items: center; gap: 6px; color: #916507; font-size: 9px; font-weight: 750; letter-spacing: 1px; }
+.member-wd-ticker-heading .icon { width: 14px; height: 14px; }
+.member-wd-ticker-heading button { border: 0; border-radius: 4px; padding: 4px 8px; background: #f3ead2; color: #795807; font-size: 10px; }
+.member-wd-ticker-heading button:focus-visible { outline: 2px solid #916507; outline-offset: 2px; }
+.member-wd-ticker-viewport { margin: 0 13px; overflow: hidden; }
+.member-wd-ticker-track { display: flex; width: max-content; animation: member-wd-scroll var(--wd-ticker-duration, 24s) linear infinite; }
+.member-wd-ticker-items { display: flex; flex-shrink: 0; align-items: center; gap: 28px; margin: 0; padding: 0 28px 0 0; list-style: none; }
+.member-wd-ticker-items li { display: flex; align-items: center; gap: 9px; white-space: nowrap; color: #5a5038; font-size: 11px; }
+.member-wd-ticker-items strong { color: #493a1c; font-weight: 650; }
+.member-wd-ticker-items time { display: block; margin-top: 2px; color: #82775e; font-size: 9px; }
+.member-wd-ticker-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: #26a26b; box-shadow: 0 0 0 3px #26a26b12; }
+.member-wd-ticker.is-paused .member-wd-ticker-track { animation-play-state: paused; }
+@keyframes member-wd-scroll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+    .member-wd-ticker-track { width: 100%; animation: none; }
+    .member-wd-ticker-heading button, .member-wd-ticker-items[aria-hidden=true] { display: none; }
+    .member-wd-ticker-items { width: 100%; max-height: 120px; overflow-y: auto; flex-direction: column; align-items: flex-start; gap: 12px; padding: 0; }
+    .member-wd-ticker-items li { white-space: normal; }
+}
 .member-simulation-notice { display: flex; gap: 6px; align-items: center; margin-bottom: 24px; color: #547565; font-size: 8px; letter-spacing: .35px; font-weight: 650; }
 .member-simulation-notice .icon { width: 13px; height: 13px; color: #0b9466; }
 .member-greeting { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }

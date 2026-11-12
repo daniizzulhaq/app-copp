@@ -9,18 +9,24 @@ use App\Models\User;
 use App\Models\WithdrawalRequest;
 use App\Notifications\SimulationNotification;
 use App\Support\Money;
+use App\Support\WithdrawalDestination;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class WithdrawalSimulationService
 {
-    public function request(User $user, SimulationScenario $s, int $amount, string $method, ?string $note, string $key): WithdrawalRequest
+    public function request(User $user, SimulationScenario $s, int $amount, string $method, ?string $note, string $key, array $destination = []): WithdrawalRequest
     {
-        return DB::transaction(function () use ($user, $s, $amount, $method, $note, $key) {
+        $destination = WithdrawalDestination::normalize($destination);
+
+        return DB::transaction(function () use ($user, $s, $amount, $method, $note, $key, $destination) {
             $s = SimulationScenario::whereKey($s->id)->lockForUpdate()->firstOrFail();
             if ($old = WithdrawalRequest::where('request_key', $key)->first()) {
                 if ($old->user_id !== $user->id || $old->amount !== $amount || $old->method !== $method || $old->simulation_scenario_id !== $s->id) {
                     throw ValidationException::withMessages(['request_key' => 'Kunci penarikan konflik.']);
+                }
+                if ($destination && $destination !== $old->only(array_keys($destination))) {
+                    throw ValidationException::withMessages(['request_key' => 'Tujuan penarikan berbeda dari pengajuan sebelumnya. Gunakan pengajuan baru.']);
                 }
 
                 return $old;
@@ -36,15 +42,18 @@ class WithdrawalSimulationService
                 throw ValidationException::withMessages(['product' => 'Beli minimal satu produk terlebih dahulu sebelum mengajukan penarikan.']);
             }
             if ($s->isLocal() && $method !== 'bank_transfer') {
-                throw ValidationException::withMessages(['method' => 'Withdrawal menggunakan transfer ke rekening bank terdaftar.']);
+                throw ValidationException::withMessages(['method' => 'Withdrawal menggunakan transfer ke bank atau e-wallet tujuan.']);
             }
             $bankAccount = [];
             if ($method === 'bank_transfer') {
                 $owner = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-                if (! $owner->hasBankAccount()) {
-                    throw ValidationException::withMessages(['bank_account' => 'Tambahkan rekening bank terlebih dahulu sebelum mengajukan withdrawal.']);
+                if ($destination) {
+                    $bankAccount = WithdrawalDestination::validate($destination, $owner->bank_name);
+                } elseif ($owner->hasBankAccount()) {
+                    $bankAccount = $owner->only(WithdrawalDestination::FIELDS);
+                } else {
+                    throw ValidationException::withMessages(['bank_account' => 'Isi bank atau e-wallet tujuan sebelum mengajukan withdrawal.']);
                 }
-                $bankAccount = $owner->only('bank_name', 'bank_account_number', 'bank_account_holder');
             }
             app(WalletService::class)->get($user, $s);
             $w = WithdrawalRequest::create(['user_id' => $user->id, 'simulation_scenario_id' => $s->id, 'amount' => $amount, 'admin_fee' => Money::rate($amount, 1000), 'method' => $method, 'note' => $note, 'request_key' => $key] + $bankAccount);
