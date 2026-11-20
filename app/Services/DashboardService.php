@@ -30,6 +30,8 @@ class DashboardService
             'wallet_available' => (int) $s->accounts()->whereNotNull('wallet_id')->where('code', 'like', '%:available')->sum('balance'),
             'wallet_pending' => (int) $s->accounts()->whereNotNull('wallet_id')->where('code', 'like', '%:pending')->sum('balance'),
             'investments' => (clone $i)->count(), 'active_investments' => (clone $i)->where('status', 'active')->count(),
+            'completed_investments' => (clone $i)->where('status', 'completed')->count(),
+            'active_principal' => (int) (clone $i)->whereIn('status', ['active', 'defaulted', 'suspended'])->selectRaw('COALESCE(SUM(principal - principal_returned_amount),0) AS total')->value('total'),
             'members' => User::role('member')->where('is_cohort', false)->count(), 'new_members' => User::role('member')->where('is_cohort', false)->whereDate('created_at', today())->count(),
             'active_members' => User::role('member')->where('is_cohort', false)->where('active', true)->count()];
         $cashEntries = (clone $base)->whereBetween('t.effective_date', [$from, $to])->where('a.code', 'cash')->selectRaw("t.effective_date AS date, SUM(CASE WHEN side='debit' THEN amount ELSE 0 END) AS inflow, SUM(CASE WHEN side='credit' THEN amount ELSE 0 END) AS outflow")->groupBy('t.effective_date')->get()->keyBy('date');

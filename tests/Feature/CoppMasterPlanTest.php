@@ -294,7 +294,7 @@ class CoppMasterPlanTest extends TestCase
 
     public function test_copp_pages_render_for_members(): void
     {
-        $this->get('/')->assertOk()->assertSee('Master plan COPP')->assertSee('Rp1.000.000');
+        $this->get('/')->assertOk()->assertSee('Buat akun')->assertDontSee('Master plan COPP');
         $this->actingAs($this->member)->withSession(['scenario_id' => $this->workspace->id]);
         $this->get('/referrals')->assertOk()->assertSee('JARINGAN MATAHARI')->assertSee('Rp5.000');
         $this->get('/packages')->assertOk()->assertSee('COPP Luxury');
@@ -316,7 +316,7 @@ class CoppMasterPlanTest extends TestCase
         $this->post('/login', ['email' => $admin->email, 'password' => 'admin123'])
             ->assertSessionHasNoErrors()->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($admin);
-        $this->assertSame(2, RoiPackage::where('active', true)->count());
+        $this->assertSame(1, RoiPackage::where('active', true)->count());
         $this->assertSame(0, Investment::count());
         $this->assertSame(0, MockPaymentInvoice::count());
         $this->assertSame(0, SimulationScenario::where('mode', 'simulation')->count());

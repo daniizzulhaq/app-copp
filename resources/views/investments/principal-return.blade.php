@@ -1,3 +1,14 @@
+@if(! $investment->returns_principal)
+<section class="panel padded-panel">
+    <h2>Batas penerimaan produk</h2>
+    <p>Paket selesai setelah mencapai {{ \App\Support\Money::rupiah($investment->promised()) }}. Tidak ada pengembalian modal tambahan. Bonus dicatat terpisah dari batas produk.</p>
+    <dl class="definition-grid">
+        <dt>Harga paket</dt><dd>{{ \App\Support\Money::rupiah($investment->principal) }}</dd>
+        <dt>Maksimal penerimaan produk</dt><dd>{{ \App\Support\Money::rupiah($investment->maximumPayout()) }}</dd>
+        <dt>Sudah diklaim</dt><dd>{{ \App\Support\Money::rupiah($investment->obligations()->sum('paid_amount')) }}</dd>
+    </dl>
+</section>
+@else
 <section class="panel padded-panel">
     <h2>Pengembalian modal</h2>
     @if($investment->roi_method === 'turnover')<p>Modal dikembalikan terpisah setelah batas total ROI produk tercapai. Waktunya mengikuti omzet, tanpa tanggal atau keuntungan harian tetap.</p>@else
@@ -14,3 +25,4 @@
         @endif
     </dl>
 </section>
+@endif

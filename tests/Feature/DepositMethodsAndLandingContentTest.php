@@ -147,9 +147,9 @@ class DepositMethodsAndLandingContentTest extends TestCase
         $this->assertSame(0, MockPaymentInvoice::where('user_id', $this->member->id)->count());
     }
 
-    public function test_landing_defaults_and_admin_edits_are_public_and_html_is_escaped(): void
+    public function test_registration_home_replaces_landing_and_admin_content_is_retained_privately(): void
     {
-        $this->get('/')->assertOk()->assertSee('Master plan COPP')->assertSee('Apakah saya harus menyetor uang?');
+        $this->get('/')->assertOk()->assertSee('Buat akun')->assertDontSee('Master plan COPP');
         $content = LandingContent::get();
         $content['utama']['judul'] = 'Judul baru dari admin';
         $content['fitur']['isi_1'] = "Artikel pertama\nBaris berikutnya";
@@ -159,8 +159,8 @@ class DepositMethodsAndLandingContentTest extends TestCase
             ->assertSessionHasNoErrors()->assertRedirect();
         $this->get('/settings/landing-content')->assertOk()->assertSee('Judul baru dari admin')->assertSee('Misi yang diperbarui');
         auth()->logout();
-        $this->get('/')->assertOk()->assertSee('Judul baru dari admin')->assertSee("Artikel pertama\nBaris berikutnya")
-            ->assertSee('Misi yang diperbarui')->assertSee('<script>alert("test")</script>')
+        $this->get('/')->assertOk()->assertSee('Buat akun')
+            ->assertDontSee('Misi yang diperbarui')->assertDontSee('Judul baru dari admin')
             ->assertDontSee('<script>alert("test")</script>', false);
         $this->assertDatabaseHas('audit_logs', ['action' => 'landing-content.updated', 'actor_id' => $this->admin->id]);
     }

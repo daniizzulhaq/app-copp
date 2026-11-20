@@ -42,9 +42,13 @@ class LedgerIntegrityService
         if (app(LedgerService::class)->balance($s, 'roi-payable') !== $outstanding) {
             $errors[] = 'Kewajiban ROI pada ledger tidak cocok dengan subledger kewajiban.';
         }
-        $principal = (int) $s->investments()->selectRaw('COALESCE(SUM(principal - principal_returned_amount),0) AS total')->value('total');
+        $principal = (int) $s->investments()->where('returns_principal', true)->selectRaw('COALESCE(SUM(principal - principal_returned_amount),0) AS total')->value('total');
         if (app(LedgerService::class)->balance($s, 'capital') !== $principal) {
             $errors[] = 'Saldo modal pada ledger tidak cocok dengan sisa modal investasi.';
+        }
+        $sales = (int) $s->investments()->where('returns_principal', false)->sum('principal');
+        if (app(LedgerService::class)->balance($s, 'product-sales') !== $sales) {
+            $errors[] = 'Pendapatan produk pada ledger tidak cocok dengan pembelian tanpa pengembalian modal.';
         }
 
         return $errors;

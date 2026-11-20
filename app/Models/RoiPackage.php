@@ -8,9 +8,11 @@ class RoiPackage extends Record
 {
     use HasFactory;
 
+    protected $attributes = ['returns_principal' => true];
+
     protected function casts(): array
     {
-        return ['active' => 'boolean', 'minimum_amount' => 'integer', 'daily_rate_bps' => 'integer', 'duration_days' => 'integer', 'daily_roi_cap' => 'integer', 'total_roi_bps' => 'integer', 'purchase_limit' => 'integer', 'fixed_amount' => 'boolean', 'roi_shares' => 'integer'];
+        return ['active' => 'boolean', 'minimum_amount' => 'integer', 'daily_rate_bps' => 'integer', 'duration_days' => 'integer', 'daily_roi_cap' => 'integer', 'total_roi_bps' => 'integer', 'purchase_limit' => 'integer', 'fixed_amount' => 'boolean', 'roi_shares' => 'integer', 'returns_principal' => 'boolean'];
     }
 
     public function investments()

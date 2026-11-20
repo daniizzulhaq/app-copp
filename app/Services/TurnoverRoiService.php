@@ -76,7 +76,11 @@ class TurnoverRoiService
                         [['roi-expense', 'debit', $amount - $before], ['roi-payable', 'credit', $amount - $before]], $i->user_id, $date);
                     $created += (int) $new;
                     if ($amount === $part->remaining_cap && $i->ends_at->toDateString() > $date) {
-                        $i->update(['ends_at' => $date]);
+                        $i->ends_at = $date;
+                        if (! $i->returns_principal) {
+                            $i->status = 'completed';
+                        }
+                        $i->save();
                     }
                 }
                 DB::table('daily_roi_pools')->where('id', $pool->id)->update(['pool_amount' => $day->roi_amount, 'updated_at' => now()]);

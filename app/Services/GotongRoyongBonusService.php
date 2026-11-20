@@ -4,10 +4,10 @@ namespace App\Services;
 
 use App\Models\Investment;
 use App\Models\MemberBonus;
-use App\Models\MockPaymentInvoice;
 use App\Models\Referral;
 use App\Models\SimulationScenario;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -55,8 +55,8 @@ class GotongRoyongBonusService
             }
             $current = $investment->user_id;
             $seen = [$current];
-            // Direct referral is separate; the next five uplines receive level 1–5.
-            for ($depth = 0; $depth <= config('copp.activation_levels'); $depth++) {
+            // The direct referrer is level 1; stop after five uplines in total.
+            for ($depth = 0; $depth < config('copp.activation_levels'); $depth++) {
                 $parentId = Referral::where('referred_id', $current)->value('referrer_id');
                 if (! $parentId || in_array($parentId, $seen, true)) {
                     break;
@@ -64,8 +64,8 @@ class GotongRoyongBonusService
                 $seen[] = $parentId;
                 if ($parent = User::find($parentId)) {
                     $this->award($parent, $s, 'activation:'.$investment->id.':depth:'.$depth, 'referral_bonus',
-                        $depth === 0 ? 'Bonus referral aktivasi produk' : 'Bonus aktivasi level '.$depth,
-                        $depth === 0 ? config('copp.activation_referral_bonus') : config('copp.activation_level_bonus'));
+                        $depth === 0 ? 'Bonus referral 25% (level 1)' : 'Bonus aktivasi level '.($depth + 1),
+                        $depth === 0 ? Money::rate($investment->principal, config('copp.activation_referral_bps')) : config('copp.activation_level_bonus'));
                 }
                 $current = $parentId;
             }
@@ -80,11 +80,9 @@ class GotongRoyongBonusService
             if (! $s->usesTurnoverRoi() || $s->status === 'archived') {
                 return;
             }
-            $deposits = (int) MockPaymentInvoice::where('user_id', $user->id)->where('simulation_scenario_id', $s->id)
-                ->where('workflow', 'manual_local')->where('status', 'paid_local')->sum('amount');
-            if ($deposits >= 100000 && $user->investments()->where('simulation_scenario_id', $s->id)
+            if ($user->investments()->where('simulation_scenario_id', $s->id)
                 ->where('roi_method', 'turnover')->whereIn('status', ['active', 'completed'])->exists()) {
-                $this->award($user, $s, 'cashback:'.$user->id.':once', 'mission_bonus', 'Cashback deposit dan aktivasi produk', config('copp.activation_cashback'));
+                $this->award($user, $s, 'cashback:'.$user->id.':once', 'mission_bonus', 'Cashback pembelian produk pertama', config('copp.activation_cashback'));
             }
         }, 5);
     }

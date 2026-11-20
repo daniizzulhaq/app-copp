@@ -8,6 +8,7 @@ use App\Services\DashboardService;
 use App\Services\ProductTurnoverService;
 use App\Services\ScenarioContext;
 use App\Services\WalletService;
+use App\Services\WithdrawalActivityService;
 use App\Services\WorkspaceClock;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ class DashboardController extends Controller
         }
         $staff = $r->user()->isStaff();
         $data = $dashboard->data($s, $from, $to, $staff ? null : $r->user()->id);
+        $data['withdrawalActivity'] = app(WithdrawalActivityService::class)->report($s, $from, $to);
         $wallet = $staff ? null : app(WalletService::class)->get($r->user(), $s);
 
         if (! $staff) {

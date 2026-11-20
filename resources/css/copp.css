@@ -11,3 +11,9 @@
 .copp-brand { max-width: 180px; }
 .copp-banner { display: block; width: 100%; height: auto; max-width: 900px; margin: 0 auto 24px; border-radius: 16px; }
 .copp-mission-grid { margin-top: 18px; }
+.registration-body { min-height: 100dvh; display: grid; place-items: center; margin: 0; padding: 28px 16px; background: #f6f5f1; color: #182029; }
+.registration-card { width: min(100%, 460px); padding: clamp(24px, 5vw, 40px); border: 1px solid #e5e1d8; border-radius: 20px; background: #fff; box-shadow: 0 16px 48px #1820290a; }
+.registration-brand { display: inline-flex; margin-bottom: 28px; }
+.registration-card h2 { margin: 8px 0; font-size: 30px; }
+.registration-card .subtitle { margin-bottom: 24px; color: #667085; }
+.registration-card .auth-footer { display: block; margin-top: 28px; text-align: center; }

@@ -10,9 +10,13 @@ use Illuminate\Support\Facades\DB;
 
 class LandingContentController extends Controller
 {
-    public function show()
+    public function show(Request $request)
     {
-        return view('landing', ['content' => LandingContent::get()]);
+        if ($request->user()) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('auth.register');
     }
 
     public function edit()
@@ -41,7 +45,7 @@ class LandingContentController extends Controller
             app(AuditService::class)->record('landing-content.updated', null, $before, $data['content']);
         });
 
-        return back()->with('status', 'Artikel landing page disimpan dan langsung tampil di halaman awal.');
+        return back()->with('status', 'Konten lama disimpan untuk arsip. Halaman awal sekarang menampilkan form pendaftaran.');
     }
 
     public static function maxLength(string $key): int

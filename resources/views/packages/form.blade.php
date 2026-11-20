@@ -10,7 +10,7 @@
 <x-field name="minimum_amount" label="Harga produk (Rp)" type="number" :value="$package->minimum_amount" min="1" max="1000000000" required/>
 <x-field name="purchase_limit" label="Batas pembelian per akun" type="number" :value="$package->purchase_limit ?? 10" min="1" max="10" required/>
 @if($package->roi_method === 'turnover')
-<p>Rp100.000 = 1 bagian; Rp1.000.000 = 10 bagian. Pool ROI 60% omzet. Batas ROI 210%, modal kembali terpisah.</p>
+<p>Paket Rp100.000 = 1 bagian ROI dari pool 25% omzet. Maksimal Rp210.000 lalu selesai, tanpa pengembalian modal tambahan.</p>
 @else
 <x-field name="daily_rate_bps" label="ROI harian (basis points)" type="number" :value="$package->daily_rate_bps" min="1" max="10000" required/>
 <x-field name="duration_days" label="Durasi (hari)" type="number" :value="$package->duration_days" min="1" max="365" required/>

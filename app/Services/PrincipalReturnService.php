@@ -17,7 +17,7 @@ class PrincipalReturnService
             $ledger = app(LedgerService::class);
             $ledger->initialize($s);
             $total = 0;
-            $investments = $s->investments()->whereIn('status', ['active', 'defaulted', 'completed'])
+            $investments = $s->investments()->where('returns_principal', true)->whereIn('status', ['active', 'defaulted', 'completed'])
                 ->where(fn ($q) => $q->whereColumn('principal_returned_amount', '<', 'principal')->orWhere('status', '!=', 'completed'))
                 ->whereDate('ends_at', '<=', $through)->orderBy('ends_at')->orderBy('id')->lockForUpdate()->get();
 
@@ -61,7 +61,7 @@ class PrincipalReturnService
 
     public function outstanding(SimulationScenario $s, string $through, ?int $userId = null): int
     {
-        return (int) $s->investments()->whereIn('status', ['active', 'defaulted', 'completed'])
+        return (int) $s->investments()->where('returns_principal', true)->whereIn('status', ['active', 'defaulted', 'completed'])
             ->whereDate('ends_at', '<=', $through)->when($userId, fn ($query) => $query->where('user_id', $userId))
             ->selectRaw('COALESCE(SUM(principal - principal_returned_amount),0) AS total')->value('total');
     }

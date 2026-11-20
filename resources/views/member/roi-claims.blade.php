@@ -3,7 +3,7 @@
     <div class="member-section-heading">
         <div><h2 id="daily-roi-heading">Klaim ROI harian</h2><p>{{ today()->format('d M Y') }} &middot; Batas klaim pukul 23.59 WIB</p></div>
     </div>
-    @if($claimScenario->usesTurnoverRoi())<p>Pool ROI = 60% omzet produk hari ini. Dibagi menurut bagian produk yang aktif sejak pukul 00.00 WIB. Pembelian baru ikut mulai besok. Omzet nol berarti ROI nol; tambahan omzet setelah klaim bisa diklaim lagi hari ini.</p>@endif
+    @if($claimScenario->usesTurnoverRoi())<p>Pool ROI = {{ config('copp.roi_pool_bps') / 100 }}% omzet produk hari ini. Dibagi menurut bagian produk yang aktif sejak pukul 00.00 WIB. Pembelian baru ikut mulai besok. Omzet nol berarti ROI nol; tambahan omzet setelah klaim bisa diklaim lagi hari ini.</p>@endif
     <p class="notice">Klaim sendiri setiap hari. ROI yang tidak diklaim sebelum pukul 00.00 WIB hari berikutnya hangus dan tidak diakumulasi.</p>
     @forelse($roiClaims as $claim)
         <article class="member-history-card">

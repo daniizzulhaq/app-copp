@@ -4,11 +4,11 @@ return [
     'plans' => [
         // Price, fixed daily rate (unused for turnover ROI), total ROI cap, shares.
         [100000, 0, 21000, 1],
-        [1000000, 0, 21000, 10],
     ],
     'purchase_limit' => 10,
-    'roi_pool_bps' => 6000,
-    'activation_referral_bonus' => 25000,
+    'roi_pool_bps' => 2500,
+    'returns_principal' => false,
+    'activation_referral_bps' => 2500,
     'activation_level_bonus' => 5000,
     'activation_levels' => 5,
     'registration_bonus' => 5000,

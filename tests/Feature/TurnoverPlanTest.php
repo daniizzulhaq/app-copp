@@ -36,6 +36,8 @@ class TurnoverPlanTest extends TestCase
     {
         parent::setUp();
         Notification::fake();
+        // Retain coverage of previously sold weighted products; the live catalog is now one product.
+        config(['copp.plans' => [[100000, 0, 21000, 1], [1000000, 0, 21000, 10]], 'copp.roi_pool_bps' => 6000, 'copp.returns_principal' => true]);
         $this->travelTo(Carbon::parse('2026-11-20 10:00:00', 'Asia/Jakarta'));
         $this->workspace = SimulationScenario::factory()->create([
             'mode' => 'local', 'plan_version' => 'turnover_v1', 'status' => 'running', 'start_date' => today(),
@@ -123,7 +125,7 @@ class TurnoverPlanTest extends TestCase
         $this->assertSame(0, $i->obligations()->count());
         $this->assertSame(0, $i->refresh()->principal_returned_amount);
         $this->assertSame('active', $i->status);
-        $this->assertSame(0, app(WalletService::class)->get($member, $this->workspace)->balance());
+        $this->assertSame(10000, app(WalletService::class)->get($member, $this->workspace)->balance());
     }
 
     public function test_ten_purchase_limit_is_independent_for_each_price_and_survives_catalog_replacement(): void
@@ -173,7 +175,7 @@ class TurnoverPlanTest extends TestCase
         }
         $this->assertSame(60000, $claim->refresh()->expired_amount);
         $this->assertSame(0, $i->obligations()->whereDate('due_date', today())->count());
-        $this->assertSame(0, app(WalletService::class)->get($owner, $this->workspace)->balance());
+        $this->assertSame(10000, app(WalletService::class)->get($owner, $this->workspace)->balance());
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
 
@@ -190,13 +192,13 @@ class TurnoverPlanTest extends TestCase
         $claim = $i->obligations()->whereDate('due_date', today())->firstOrFail();
         $service->claim($owner, $claim);
         $service->claim($owner, $claim);
-        $this->assertSame(60000, app(WalletService::class)->get($owner, $this->workspace)->balance());
+        $this->assertSame(70000, app(WalletService::class)->get($owner, $this->workspace)->balance());
         $this->buy($buyer);
         $this->assertSame(120000, $claim->refresh()->amount);
         $this->assertSame(60000, $claim->remaining());
         $service->claim($owner, $claim);
         $service->claim($owner, $claim);
-        $this->assertSame(120000, app(WalletService::class)->get($owner, $this->workspace)->balance());
+        $this->assertSame(130000, app(WalletService::class)->get($owner, $this->workspace)->balance());
         $this->assertSame(2, $claim->distributions()->count());
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
@@ -217,7 +219,7 @@ class TurnoverPlanTest extends TestCase
         $service->prepare($this->workspace);
         $this->assertSame('completed', $small->refresh()->status);
         $this->assertSame(100000, $small->principal_returned_amount);
-        $this->assertSame(310000, app(WalletService::class)->get($owner, $this->workspace)->balance());
+        $this->assertSame(320000, app(WalletService::class)->get($owner, $this->workspace)->balance());
         $this->travelTo(now()->addDay());
         $this->buy($buyer);
         $this->assertDatabaseHas('daily_roi_pools', ['simulation_scenario_id' => $this->workspace->id,
@@ -250,7 +252,7 @@ class TurnoverPlanTest extends TestCase
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
 
-    public function test_cashback_requires_verified_deposit_and_product_and_commissions_stop_at_level_five(): void
+    public function test_deposit_alone_has_no_bonus_and_product_commissions_stop_at_five_total_levels(): void
     {
         $chain = [$this->member()];
         for ($n = 1; $n <= 7; $n++) {
@@ -270,7 +272,7 @@ class TurnoverPlanTest extends TestCase
         $i = $this->buy($buyer, 100000, $key);
         $this->buy($buyer, 100000, $key);
         $this->assertSame(25000, (int) MemberBonus::where('user_id', $chain[6]->id)->sum('amount'));
-        foreach (range(1, 5) as $level) {
+        foreach (range(1, 4) as $level) {
             $this->assertSame(5000, (int) MemberBonus::where('user_id', $chain[6 - $level]->id)->sum('amount'));
         }
         $this->assertSame(0, MemberBonus::where('user_id', $chain[0]->id)->count());

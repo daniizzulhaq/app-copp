@@ -37,6 +37,8 @@ if(dashboard){
     if(coverageCanvas) new Chart(coverageCanvas,{type:'doughnut',data:{labels:['Terbayar','Belum terbayar'],datasets:[{data:[ratio,100-ratio],backgroundColor:['#10b981','#edf2f7'],borderWidth:0,borderRadius:6,spacing:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'82%',rotation:-90,animation:reduced?false:{duration:500},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(1)}%`}}}}});
 }
 const portfolio=document.getElementById('portfolio-data');
+const withdrawalActivity=document.getElementById('withdrawal-activity-data');
+if(withdrawalActivity){const c=JSON.parse(withdrawalActivity.textContent);draw('withdrawal-members',c.labels,[{label:'Member berhasil WD',data:c.members}],'bar',false);}
 const memberDashboard=document.getElementById('member-dashboard-data');
 if(memberDashboard){const c=JSON.parse(memberDashboard.textContent);draw('member-balance',c.labels,[{label:'Saldo tersedia',data:c.cash}]);}
 if(portfolio){const rows=JSON.parse(portfolio.textContent);draw('portfolio',rows.map(r=>r.due_date.slice(0,10)),[{label:'ROI dijanjikan jatuh tempo',data:rows.map(r=>r.amount),color:'#94a3b8'},{label:'ROI dibayar',data:rows.map(r=>r.paid_amount),color:'#10b981'}]);}

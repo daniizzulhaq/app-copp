@@ -1,4 +1,4 @@
-@extends('layouts.auth') @section('title','Daftar akun')
+@extends('layouts.registration') @section('title','Daftar akun')
 @section('content')
 <span class="eyebrow">MULAI SEKARANG</span><h2>Buat akun</h2><p class="subtitle">Isi data dan kata sandi. Akun langsung bisa digunakan setelah mendaftar.</p>
 <form method="post" action="/register" class="stack">

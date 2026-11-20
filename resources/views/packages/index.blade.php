@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Produk Investasi')
 @section('content')
-<div class="page-heading"><div><p class="eyebrow">PRODUK INVESTASI</p><h1>Produk Investasi<span class="heading-dot">.</span></h1><p>Dua produk COPP Luxury. Maksimal 10 pembelian masing-masing produk per akun.</p></div></div>
+<div class="page-heading"><div><p class="eyebrow">PRODUK INVESTASI</p><h1>Produk Investasi<span class="heading-dot">.</span></h1><p>Satu paket Rp100.000, satu bagian ROI. Maksimal 10 pembelian per akun.</p></div></div>
 @can('manage')<p><a href="/packages" class="text-link">Produk aktif</a> · <a href="/packages?status=archived" class="text-link">Lihat arsip produk</a></p>@endcan
 <div class="package-grid">
 @forelse($packages as $p)
@@ -9,7 +9,7 @@
 <div class="package-top"><span class="kpi-icon green"><x-icon name="box"/></span><x-status :value="$p->active ? 'active':'archived'"/></div>
 <h2>{{ $p->name }}</h2><p>{{ $p->description }}</p>
 @if($p->roi_method === 'turnover')
-<div class="package-rate">{{ $p->roi_shares }} <span>bagian ROI</span></div><p>Pool 60% omzet produk dibagi menurut bagian produk aktif. Omzet nol, ROI nol.</p>
+<div class="package-rate">{{ $p->roi_shares }} <span>bagian ROI</span></div><p>Pool ROI 25% omzet pembelian dibagi menurut jumlah produk aktif. Penerimaan maksimal Rp210.000 per paket, tanpa pengembalian modal tambahan. Omzet nol, ROI nol.</p>
 @else
 <div class="package-rate">{{ $p->daily_rate_bps/100 }}<span>% per hari</span></div>
 @endif

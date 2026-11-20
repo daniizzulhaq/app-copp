@@ -6,7 +6,7 @@ return [
         'deskripsi_halaman' => 'Pelajari kewajiban ROI, arus kas, pertumbuhan peserta, dan kegagalan likuiditas melalui COPP Luxury.',
         'judul' => "COPP Luxury.\nJaringan matahari.",
         'penekanan_judul' => 'Master plan ROI.',
-        'deskripsi' => 'Dua pilihan produk, pembagian ROI dari 60% omzet, dan bonus referral serta level 1?5. Pantau saldo, transaksi, dan portofolio Anda dalam satu tempat.',
+        'deskripsi' => 'Satu paket Rp100.000, pembagian ROI dari 25% omzet, dan bonus referral serta level 1?5. Pantau saldo, transaksi, dan portofolio Anda dalam satu tempat.',
     ],
     'fitur' => [
         'label' => 'ONE CONNECTED WORKSPACE',
@@ -47,14 +47,14 @@ return [
     'master_plan' => [
         'label' => 'COPP LUXURY',
         'judul' => 'Master plan COPP',
-        'deskripsi' => 'Dua produk: Rp100.000 dan Rp1.000.000. Maksimal 10 pembelian masing-masing per akun.',
+        'deskripsi' => 'Paket Rp100.000, satu bagian ROI, maksimal Rp210.000 lalu selesai.',
         'judul_1' => 'Misi member',
         'isi_1' => 'Klaim bonus daftar Rp5.000 sekali. Undang satu teman mendaftar: Rp5.000 per teman. Deposit terverifikasi dan aktivasi produk: cashback Rp10.000 sekali per akun.',
         'judul_2' => 'ROI harian',
-        'isi_2' => 'Pool 60% omzet dibagi menurut bagian produk aktif sejak awal hari. Produk baru ikut mulai besok. Omzet nol, ROI nol. Tambahan omzet hari ini bisa diklaim lagi.',
+        'isi_2' => 'Pool 25% omzet dibagi menurut bagian produk aktif sejak awal hari. Produk baru ikut mulai besok. Omzet nol, ROI nol. Tambahan omzet hari ini bisa diklaim lagi.',
         'judul_3' => 'Bonus jaringan',
         'isi_3' => 'Pengundang langsung Rp25.000 per aktivasi. Lima upline berikutnya menerima bonus level 1?5, masing-masing Rp5.000 per aktivasi.',
-        'catatan' => 'Minimal WD Rp30.000, admin 10%. Batas ROI 210% di luar bonus; modal kembali terpisah saat batas tercapai.',
+        'catatan' => 'Minimal WD Rp30.000, admin 10%. Batas ROI 210% di luar bonus; tanpa pengembalian modal tambahan.',
     ],
     'faq' => [
         'label' => 'PERTANYAAN UMUM',

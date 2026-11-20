@@ -69,6 +69,7 @@ class ProductTurnoverService
 
     private function dailyQuery(SimulationScenario $workspace, string $from, string $to): Builder
     {
+        $defaultRate = $workspace->usesTurnoverRoi() ? (int) config('copp.roi_pool_bps') : 3000;
         $products = DB::table('daily_product_turnovers')->where('simulation_scenario_id', $workspace->id)
             ->whereBetween('period_date', [$from, $to]);
         // Select one debit per posting, so the two ledger sides are never counted twice.
@@ -94,7 +95,7 @@ class ProductTurnoverService
             ->selectRaw('days.period_date,
                 COALESCE(p.gross_amount, 0) as gross_amount,
                 COALESCE(p.purchase_count, 0) as purchase_count,
-                COALESCE(p.roi_rate_bps, 3000) as roi_rate_bps,
+                COALESCE(p.roi_rate_bps, '.$defaultRate.') as roi_rate_bps,
                 COALESCE(p.roi_amount, 0) as roi_amount,
                 COALESCE(m.funds_in, 0) as funds_in,
                 COALESCE(m.referral_bonus, 0) as referral_bonus,

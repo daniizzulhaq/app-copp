@@ -17,7 +17,7 @@ class LedgerService
 
     public function initialize(SimulationScenario $s): void
     {
-        $required = ['cash' => 'debit', 'reserve' => 'debit', 'capital' => 'credit', 'seed-equity' => 'credit', 'roi-expense' => 'debit', 'roi-payable' => 'credit'];
+        $required = ['cash' => 'debit', 'reserve' => 'debit', 'capital' => 'credit', 'product-sales' => 'credit', 'seed-equity' => 'credit', 'roi-expense' => 'debit', 'roi-payable' => 'credit'];
         $existing = $s->accounts()->whereIn('code', array_keys($required))->pluck('code')->all();
         foreach ($required as $code => $side) {
             if (! in_array($code, $existing, true)) {
