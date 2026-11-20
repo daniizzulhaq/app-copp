@@ -14,11 +14,11 @@ use App\Services\LedgerIntegrityService;
 use App\Services\ManualDepositService;
 use App\Services\MemberBonusService;
 use App\Services\ReferralService;
-use App\Services\ROIObligationService;
 use App\Services\WalletService;
 use Carbon\Carbon;
 use Database\Seeders\AccountSeeder;
 use Database\Seeders\CoppSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -33,6 +33,7 @@ class CoppMasterPlanTest extends TestCase
     use DatabaseTransactions;
 
     private SimulationScenario $workspace;
+
     private User $member;
 
     protected function setUp(): void
@@ -108,30 +109,6 @@ class CoppMasterPlanTest extends TestCase
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
         $this->seed(AccountSeeder::class);
         $this->assertSame($userCount, User::withTrashed()->count());
-    }
-
-    public function test_all_six_plans_have_exact_total_roi_and_a_capped_final_day(): void
-    {
-        $this->seed(CoppSeeder::class);
-        $this->fund();
-        foreach (config('copp.plans') as [$price, $daily, $total]) {
-            $p = RoiPackage::where('minimum_amount', $price)->where('active', true)->firstOrFail();
-            $this->assertSame($daily, $p->daily_rate_bps);
-            $this->assertSame($total, $p->total_roi_bps);
-            $i = app(InvestmentService::class)->open($this->member, $this->workspace, $p, $price, (string) Str::uuid());
-            // Product edits cannot alter an existing investment's cap.
-            $p->update(['total_roi_bps' => 100]);
-            $through = $i->ends_at->copy()->addDays(10);
-            app(ROIObligationService::class)->accrue($this->workspace, $through);
-            app(ROIObligationService::class)->accrue($this->workspace, $through);
-            $this->assertSame(intdiv($price * $total, 10000), $i->promised());
-            $this->assertSame($i->promised(), (int) $i->obligations()->sum('amount'));
-            $this->assertLessThanOrEqual(intdiv($price * $daily, 10000), (int) $i->obligations()->max('amount'));
-        }
-        $expected = Investment::where('user_id', $this->member->id)->get()->sum(fn ($investment) => $investment->promised());
-        $dashboard = app(\App\Services\DashboardService::class)->data($this->workspace, '2026-11-01', '2026-11-01', $this->member->id);
-        $this->assertSame($expected, $dashboard['metrics']['promised']);
-        $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
 
     public function test_purchase_limit_counts_completed_products_and_other_workspaces_but_allows_retries(): void
@@ -317,7 +294,7 @@ class CoppMasterPlanTest extends TestCase
 
     public function test_copp_pages_render_for_members(): void
     {
-        $this->get('/')->assertOk()->assertSee('Master plan COPP')->assertSee('Rp5.000.000');
+        $this->get('/')->assertOk()->assertSee('Master plan COPP')->assertSee('Rp1.000.000');
         $this->actingAs($this->member)->withSession(['scenario_id' => $this->workspace->id]);
         $this->get('/referrals')->assertOk()->assertSee('JARINGAN MATAHARI')->assertSee('Rp5.000');
         $this->get('/packages')->assertOk()->assertSee('COPP Luxury');
@@ -327,9 +304,9 @@ class CoppMasterPlanTest extends TestCase
 
     public function test_seeding_again_does_not_create_extra_accounts_products_or_demo_transactions(): void
     {
-        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);
         $users = User::count();
-        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);
         $this->assertSame($users, User::count());
         $this->assertDatabaseMissing('users', ['email' => 'member@copp.test']);
         $admin = User::where('email', 'admin@copp.production')->firstOrFail();
@@ -339,7 +316,7 @@ class CoppMasterPlanTest extends TestCase
         $this->post('/login', ['email' => $admin->email, 'password' => 'admin123'])
             ->assertSessionHasNoErrors()->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($admin);
-        $this->assertSame(6, RoiPackage::where('active', true)->count());
+        $this->assertSame(2, RoiPackage::where('active', true)->count());
         $this->assertSame(0, Investment::count());
         $this->assertSame(0, MockPaymentInvoice::count());
         $this->assertSame(0, SimulationScenario::where('mode', 'simulation')->count());

@@ -1,6 +1,6 @@
 @props(['turnover', 'showFilter' => false])
 <section class="panel">
-    <div class="panel-heading"><div><h2>Omzet masuk, alokasi ROI &amp; beban bonus</h2><p>Pantau pembelian produk, alokasi ROI 30%, dan beban bonus referral serta misi.</p></div><span class="tag">30% untuk ROI</span></div>
+    <div class="panel-heading"><div><h2>Omzet masuk, alokasi ROI &amp; beban bonus</h2><p>Pantau pembelian produk, alokasi ROI {{ $turnover['pool_percent'] }}%, dan beban bonus referral serta misi.</p></div><span class="tag">{{ $turnover['pool_percent'] }}% untuk ROI</span></div>
     @if($showFilter)
         <form class="report-filters" method="get">
             <label class="field"><span>Dari tanggal</span><input type="date" name="from" value="{{ $turnover['from'] }}"></label>
@@ -11,7 +11,7 @@
     <div class="padded-panel">
         <h3>Hari ini</h3>
         <div class="kpi-grid">
-            @foreach([['Omzet masuk produk', $turnover['today']->gross_amount, 'Pembelian produk yang berhasil'], ['Alokasi ROI 30%', $turnover['today']->roi_amount, '30% dari omzet produk'], ['Beban bonus', $turnover['today']->bonus_amount, 'Bonus referral + bonus misi']] as [$label, $value, $hint])
+            @foreach([['Omzet masuk produk', $turnover['today']->gross_amount, 'Pembelian produk yang berhasil'], ['Alokasi ROI '.$turnover['pool_percent'].'%', $turnover['today']->roi_amount, $turnover['pool_percent'].'% dari omzet produk'], ['Beban bonus', $turnover['today']->bonus_amount, 'Bonus referral + bonus misi']] as [$label, $value, $hint])
                 <article class="kpi-card"><div class="kpi-top"><span>{{ $label }}</span></div><strong>{{ \App\Support\Money::rupiah($value) }}</strong><small>{{ $hint }}</small></article>
             @endforeach
         </div>
@@ -25,13 +25,13 @@
         <h3>Total periode {{ \Carbon\Carbon::parse($turnover['from'])->format('d M Y') }} sampai {{ \Carbon\Carbon::parse($turnover['to'])->format('d M Y') }}</h3>
         <div class="metric-strip">
             <span>Omzet masuk produk <b>{{ \App\Support\Money::rupiah($turnover['gross']) }}</b></span>
-            <span>Alokasi ROI 30% <b>{{ \App\Support\Money::rupiah($turnover['roi']) }}</b></span>
+            <span>Alokasi ROI {{ $turnover['pool_percent'] }}% <b>{{ \App\Support\Money::rupiah($turnover['roi']) }}</b></span>
             <span>Beban bonus <b>{{ \App\Support\Money::rupiah($turnover['bonus']) }}</b></span>
             <span>Dana masuk (deposit terverifikasi) <b>{{ \App\Support\Money::rupiah($turnover['funds_in']) }}</b></span>
             <span>Bonus referral <b>{{ \App\Support\Money::rupiah($turnover['referral_bonus']) }}</b></span>
             <span>Bonus misi <b>{{ \App\Support\Money::rupiah($turnover['mission_bonus']) }}</b></span>
         </div>
-        <p class="muted text-sm">Contoh: omzet produk Rp1.000.000 × 30% = alokasi ROI Rp300.000. Deposit dihitung sebagai dana masuk saat disetujui; omzet produk dihitung saat pembelian berhasil. Keduanya ditampilkan terpisah. Alokasi ROI dicatat terpisah dari ROI yang diklaim member.</p>
+        <p class="muted text-sm">Contoh: omzet produk Rp1.000.000 × {{ $turnover['pool_percent'] }}% = alokasi ROI {{ \App\Support\Money::rupiah(1000000 * $turnover['pool_percent'] / 100) }}. Deposit dihitung sebagai dana masuk saat disetujui; omzet produk dihitung saat pembelian berhasil. Keduanya ditampilkan terpisah. Alokasi ROI dicatat terpisah dari ROI yang diklaim member.</p>
         <p class="muted text-sm">Beban bonus adalah hak bonus referral dan misi yang tercatat dan otomatis dikreditkan ke wallet member. Nilai ini belum berarti sudah ditransfer ke bank. Penarikan mengikuti pengajuan WD. Tanggal pencatatan menggunakan WIB.</p>
     </div>
     <div class="table-wrap"><table>

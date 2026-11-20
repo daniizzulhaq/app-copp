@@ -16,7 +16,7 @@ class SystemSetting extends Record
 
     public static function minimumWithdrawalAmount(): int
     {
-        return (int) (static::whereKey('minimum_withdrawal_amount')->value('value') ?? 50000);
+        return (int) (static::whereKey('minimum_withdrawal_amount')->value('value') ?? 30000);
     }
 
     public static function supportWhatsappNumber(): string

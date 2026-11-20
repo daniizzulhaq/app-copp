@@ -3,11 +3,12 @@
     <div class="member-section-heading">
         <div><h2 id="daily-roi-heading">Klaim ROI harian</h2><p>{{ today()->format('d M Y') }} &middot; Batas klaim pukul 23.59 WIB</p></div>
     </div>
+    @if($claimScenario->usesTurnoverRoi())<p>Pool ROI = 60% omzet produk hari ini. Dibagi menurut bagian produk yang aktif sejak pukul 00.00 WIB. Pembelian baru ikut mulai besok. Omzet nol berarti ROI nol; tambahan omzet setelah klaim bisa diklaim lagi hari ini.</p>@endif
     <p class="notice">Klaim sendiri setiap hari. ROI yang tidak diklaim sebelum pukul 00.00 WIB hari berikutnya hangus dan tidak diakumulasi.</p>
     @forelse($roiClaims as $claim)
         <article class="member-history-card">
             <div class="member-history-top"><div><strong>{{ $claim->investment->package_name }}</strong><small>{{ $claim->investment->number }}</small></div></div>
-            <div class="member-history-bottom"><strong>{{ \App\Support\Money::rupiah($claim->amount) }}</strong><x-status :value="$claim->status"/></div>
+            <div class="member-history-bottom"><strong>{{ \App\Support\Money::rupiah($claim->remaining()) }}</strong><x-status :value="$claim->status"/></div>
             @if($claim->remaining() > 0 && $claimScenario->status !== 'archived')
                 <form method="post" action="{{ route('roi.claim', $claim) }}" class="stack">
                     @csrf

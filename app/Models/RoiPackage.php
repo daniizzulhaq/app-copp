@@ -10,7 +10,7 @@ class RoiPackage extends Record
 
     protected function casts(): array
     {
-        return ['active' => 'boolean', 'minimum_amount' => 'integer', 'daily_rate_bps' => 'integer', 'duration_days' => 'integer', 'daily_roi_cap' => 'integer', 'total_roi_bps' => 'integer', 'purchase_limit' => 'integer', 'fixed_amount' => 'boolean'];
+        return ['active' => 'boolean', 'minimum_amount' => 'integer', 'daily_rate_bps' => 'integer', 'duration_days' => 'integer', 'daily_roi_cap' => 'integer', 'total_roi_bps' => 'integer', 'purchase_limit' => 'integer', 'fixed_amount' => 'boolean', 'roi_shares' => 'integer'];
     }
 
     public function investments()

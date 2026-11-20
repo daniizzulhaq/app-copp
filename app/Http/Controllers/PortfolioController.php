@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\InvestmentRequest;
 use App\Models\Investment;
 use App\Models\RoiPackage;
-use App\Services\InvestmentService;
 use App\Services\DailyRoiClaimService;
+use App\Services\InvestmentService;
 use App\Services\ScenarioContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -24,7 +24,14 @@ class PortfolioController extends Controller
             ->when(! $r->user()->isStaff(), fn ($q) => $q->where('user_id', $r->user()->id))->when($r->status, fn ($q) => $q->where('status', $r->status))
             ->when($r->q, fn ($q) => $q->where('number', 'like', '%'.$r->q.'%'))->orderBy('id', $r->sort === 'asc' ? 'asc' : 'desc')->paginate(12)->withQueryString();
         $packages = RoiPackage::where('active', true)->get();
-        $purchaseCounts = Investment::where('user_id', $r->user()->id)->selectRaw('roi_package_id, COUNT(*) AS total')->groupBy('roi_package_id')->pluck('total', 'roi_package_id');
+        $purchaseCounts = Investment::where('user_id', $r->user()->id)
+            ->when($s->usesTurnoverRoi(), fn ($q) => $q->where('simulation_scenario_id', $s->id))
+            ->selectRaw('roi_package_id, COUNT(*) AS total')->groupBy('roi_package_id')->pluck('total', 'roi_package_id');
+        if ($s->usesTurnoverRoi()) {
+            $counts = Investment::where('user_id', $r->user()->id)->where('simulation_scenario_id', $s->id)
+                ->where('roi_method', 'turnover')->selectRaw('principal, COUNT(*) AS total')->groupBy('principal')->pluck('total', 'principal');
+            $purchaseCounts = $packages->mapWithKeys(fn ($p) => [$p->id => $counts[$p->minimum_amount] ?? 0]);
+        }
 
         return view('investments.index', compact('s', 'investments', 'packages', 'claimScenario', 'roiClaims', 'purchaseCounts'));
     }

@@ -14,6 +14,7 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RegistrationBonusController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScenarioController;
 use App\Http\Controllers\WalletController;
@@ -35,6 +36,8 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/sandbox/webhook', [PaymentController::class, 'webhook'])->middleware('throttle:120,1')->name('sandbox.webhook');
 Route::middleware(['auth', 'active'])->group(function () {
+    Route::post('/bonuses/registration/claim', RegistrationBonusController::class)
+        ->middleware(['can:transact', 'throttle:10,1'])->name('bonuses.registration.claim');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::patch('/profile', [ProfileController::class, 'update']);

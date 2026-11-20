@@ -4,12 +4,14 @@ use App\Jobs\ProcessLocalRoi;
 use App\Jobs\RunSimulationDay;
 use App\Models\RoiObligation;
 use App\Models\SimulationScenario;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\LedgerIntegrityService;
 use App\Services\LedgerService;
 use App\Services\LocalOperationsService;
 use App\Services\ManualDepositService;
+use App\Services\MemberPlanResetService;
 use App\Services\MockPaymentService;
 use App\Services\SimulationEngineService;
 use Carbon\Carbon;
@@ -19,6 +21,39 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
+
+Artisan::command('copp:activate-plan {--reset-members}', function () {
+    $workspace = SimulationScenario::find(SystemSetting::whereKey('local_workspace')->value('value'));
+    if ($workspace?->usesTurnoverRoi()) {
+        $this->info('Plan dua produk sudah aktif pada workspace '.$workspace->id.'. Tidak ada reset ulang.');
+
+        return 0;
+    }
+    if (! $this->option('reset-members')) {
+        $this->info('Aktivasi menolkan saldo dan produk pada workspace baru, mempertahankan akun serta jaringan. Jalankan dengan --reset-members.');
+
+        return 0;
+    }
+    if (config('database.default') !== 'mysql') {
+        throw new RuntimeException('Backup aktivasi ini memerlukan koneksi MySQL.');
+    }
+    $connection = config('database.connections.mysql');
+    Storage::disk('local')->makeDirectory('backups');
+    $backup = 'backups/pre-turnover-plan-'.now()->format('Ymd-His').'-'.Str::random(6).'.sql';
+    $process = new Process([
+        env('MYSQLDUMP_PATH', 'C:/xampp/mysql/bin/mysqldump.exe'), '--host='.$connection['host'], '--port='.$connection['port'],
+        '--user='.$connection['username'], '--single-transaction', '--routines', '--triggers',
+        '--result-file='.Storage::disk('local')->path($backup), $connection['database'],
+    ], base_path(), ['MYSQL_PWD' => $connection['password']], null, 120);
+    $process->mustRun();
+    if (Storage::disk('local')->size($backup) < 1000) {
+        throw new RuntimeException('Backup tidak lengkap. Aktivasi dibatalkan.');
+    }
+    $this->info('Backup: '.Storage::disk('local')->path($backup));
+    $active = app(MemberPlanResetService::class)->reset();
+    $this->info('Plan aktif: workspace '.$active->id.'. Saldo dan produk aktif mulai nol; akun dan jaringan tetap.');
+})->purpose('Backup dan aktivasi plan dua produk dengan reset saldo member sekali');
 
 Artisan::command('nexavest:simulate {scenario} {--days=1}', function () {
     $s = SimulationScenario::findOrFail($this->argument('scenario'));

@@ -9,7 +9,7 @@ class Investment extends Record
     protected function casts(): array
     {
         return ['starts_at' => 'date', 'ends_at' => 'date', 'principal' => 'integer', 'daily_rate_bps' => 'integer',
-            'principal_returned_amount' => 'integer', 'principal_returned_at' => 'datetime', 'daily_roi_cap' => 'integer', 'total_roi_bps' => 'integer'];
+            'principal_returned_amount' => 'integer', 'principal_returned_at' => 'datetime', 'daily_roi_cap' => 'integer', 'total_roi_bps' => 'integer', 'roi_shares' => 'integer'];
     }
 
     public function user()
@@ -34,6 +34,9 @@ class Investment extends Record
 
     public function promised(): int
     {
+        if ($this->roi_method === 'turnover') {
+            return Money::rate($this->principal, $this->total_roi_bps ?? 21000);
+        }
         $total = Money::rate($this->principal, $this->daily_rate_bps, $this->duration_days);
 
         $total = $this->daily_roi_cap === null ? $total : min($total, $this->daily_roi_cap * $this->duration_days);

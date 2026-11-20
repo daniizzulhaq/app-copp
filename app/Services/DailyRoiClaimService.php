@@ -6,9 +6,9 @@ use App\Models\RoiDistribution;
 use App\Models\RoiObligation;
 use App\Models\SimulationScenario;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
 class DailyRoiClaimService
@@ -87,7 +87,7 @@ class DailyRoiClaimService
             $amount = $o->remaining();
             $ledger = app(LedgerService::class);
             app(WalletService::class)->get($member, $s);
-            $tx = $ledger->post($s, 'roi-claim:'.$o->id, 'roi_paid', 'Klaim ROI harian oleh member',
+            $tx = $ledger->post($s, 'roi-claim:'.$o->id.($s->usesTurnoverRoi() ? ':'.$o->paid_amount : ''), 'roi_paid', 'Klaim ROI harian oleh member',
                 [['roi-payable', 'debit', $amount], ['wallet-offset', 'credit', $amount], ['reserve', 'debit', $amount], ['wallet:'.$member->id.':available', 'credit', $amount]],
                 $member->id, today()->toDateString());
             RoiDistribution::create(['roi_obligation_id' => $o->id, 'ledger_transaction_id' => $tx->id, 'amount' => $amount]);

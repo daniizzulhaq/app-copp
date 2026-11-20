@@ -2,14 +2,18 @@
 
 return [
     'plans' => [
-        [100000, 500, 21000],
-        [200000, 500, 25000],
-        [500000, 700, 30000],
-        [1000000, 700, 35000],
-        [2000000, 1000, 35000],
-        [5000000, 1000, 40000],
+        // Price, fixed daily rate (unused for turnover ROI), total ROI cap, shares.
+        [100000, 0, 21000, 1],
+        [1000000, 0, 21000, 10],
     ],
-    'purchase_limit' => 3,
+    'purchase_limit' => 10,
+    'roi_pool_bps' => 6000,
+    'activation_referral_bonus' => 25000,
+    'activation_level_bonus' => 5000,
+    'activation_levels' => 5,
+    'registration_bonus' => 5000,
+    'invitation_bonus' => 5000,
+    'activation_cashback' => 10000,
     'referral_rates_bps' => [1 => 1500, 2 => 300, 3 => 200, 4 => 200, 5 => 200,
         6 => 100, 7 => 100, 8 => 100, 9 => 100, 10 => 100, 11 => 100, 12 => 100, 13 => 100, 14 => 100, 15 => 100],
     'missions' => [

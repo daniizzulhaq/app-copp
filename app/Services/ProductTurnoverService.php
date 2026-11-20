@@ -25,7 +25,7 @@ class ProductTurnoverService
             $day = DailyProductTurnover::firstOrNew([
                 'simulation_scenario_id' => $workspace->id,
                 'period_date' => $investment->starts_at->toDateString(),
-            ], ['roi_rate_bps' => 3000]);
+            ], ['roi_rate_bps' => $workspace->usesTurnoverRoi() ? config('copp.roi_pool_bps') : 3000]);
             $before = $day->exists ? $day->only(['gross_amount', 'purchase_count', 'roi_rate_bps', 'roi_amount']) : null;
             $day->fill([
                 'gross_amount' => $gross, 'purchase_count' => $purchases->count(),
@@ -35,6 +35,9 @@ class ProductTurnoverService
                 $day->save();
                 app(AuditService::class)->record('product_turnover.recorded', $day, $before,
                     $day->only(['period_date', 'gross_amount', 'purchase_count', 'roi_rate_bps', 'roi_amount']), $workspace->id);
+            }
+            if ($workspace->usesTurnoverRoi()) {
+                app(TurnoverRoiService::class)->accrue($workspace, $investment->starts_at);
             }
         }, 5);
     }
@@ -53,7 +56,8 @@ class ProductTurnoverService
         $today = today()->toDateString();
 
         return [
-            'today' => $this->figures($this->dailyQuery($workspace, $today, $today)->first()),
+            'pool_percent' => $workspace->usesTurnoverRoi() ? config('copp.roi_pool_bps') / 100 : 30,
+            'today' => $this->figures($this->dailyQuery($workspace, $today, $today)->first(), $workspace->usesTurnoverRoi() ? config('copp.roi_pool_bps') : 3000),
             'gross' => (int) $totals->gross, 'roi' => (int) $totals->roi,
             'funds_in' => (int) $totals->funds_in, 'bonus' => (int) $totals->bonus,
             'referral_bonus' => (int) $totals->referral_bonus, 'mission_bonus' => (int) $totals->mission_bonus,
@@ -98,10 +102,10 @@ class ProductTurnoverService
                 COALESCE(m.referral_bonus, 0) + COALESCE(m.mission_bonus, 0) as bonus_amount');
     }
 
-    private function figures(?object $row): object
+    private function figures(?object $row, int $defaultRate = 3000): object
     {
         $figures = ['period_date' => $row ? Carbon::parse($row->period_date) : today(),
-            'roi_rate_bps' => (int) ($row?->roi_rate_bps ?? 3000)];
+            'roi_rate_bps' => (int) ($row?->roi_rate_bps ?? $defaultRate)];
         foreach (['gross_amount', 'purchase_count', 'roi_amount', 'funds_in', 'referral_bonus', 'mission_bonus', 'bonus_amount'] as $field) {
             $figures[$field] = (int) ($row?->$field ?? 0);
         }

@@ -57,9 +57,9 @@ class WithdrawalMinimumSettingTest extends TestCase
 
     public function test_default_is_shown_and_admin_can_save_and_preserve_minimum(): void
     {
-        $this->assertSame(50000, SystemSetting::minimumWithdrawalAmount());
+        $this->assertSame(30000, SystemSetting::minimumWithdrawalAmount());
         $this->actingAs($this->admin)->get('/settings')->assertOk()
-            ->assertSee('Minimal WD (Rp)')->assertSee('value="50000"', false);
+            ->assertSee('Minimal WD (Rp)')->assertSee('value="30000"', false);
         $this->saveMinimum(75000);
         $this->assertDatabaseHas('system_settings', ['key' => 'minimum_withdrawal_amount', 'value' => '75000']);
         $this->get('/settings')->assertOk()->assertSee('value="75000"', false);
@@ -68,6 +68,24 @@ class WithdrawalMinimumSettingTest extends TestCase
         $this->actingAs($this->member)->get('/withdrawals')->assertOk()
             ->assertSee('min="75000"', false)->assertSee('Minimum WD Rp75.000.')
             ->assertSee('admin Rp7.500, diterima Rp67.500.');
+    }
+
+    public function test_default_thirty_thousand_withdrawal_has_ten_percent_fee_and_no_duplicate_hold(): void
+    {
+        $this->fundMember();
+        $service = app(WithdrawalSimulationService::class);
+        $key = (string) Str::uuid();
+        $withdrawal = $service->request($this->member, $this->workspace, 30000, 'bank_transfer', null, $key);
+        $this->assertSame($withdrawal->id, $service->request($this->member, $this->workspace, 30000, 'bank_transfer', null, $key)->id);
+        $this->assertSame(3000, $withdrawal->admin_fee);
+        $this->assertSame(27000, $withdrawal->netAmount());
+        $wallet = app(WalletService::class)->get($this->member, $this->workspace);
+        $this->assertSame(370000, $wallet->balance());
+        $this->assertSame(30000, $wallet->balance('pending'));
+        $service->review($withdrawal, true, $this->admin);
+        $this->assertDatabaseHas('simulated_payouts', ['withdrawal_request_id' => $withdrawal->id, 'amount' => 27000]);
+        $this->assertSame(0, $wallet->balance('pending'));
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
 
     public static function invalidMinimums(): array
@@ -91,7 +109,7 @@ class WithdrawalMinimumSettingTest extends TestCase
         $this->put('/settings', $data)->assertRedirect('/login');
         $this->actingAs($this->member)->get('/settings')->assertForbidden();
         $this->put('/settings', $data)->assertForbidden();
-        $this->assertSame(50000, SystemSetting::minimumWithdrawalAmount());
+        $this->assertSame(30000, SystemSetting::minimumWithdrawalAmount());
     }
 
     public static function configuredMinimums(): array

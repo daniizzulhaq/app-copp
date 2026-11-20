@@ -13,6 +13,11 @@ class SimulationScenario extends Record
         return $this->mode === 'local';
     }
 
+    public function usesTurnoverRoi(): bool
+    {
+        return $this->isLocal() && $this->plan_version === 'turnover_v1';
+    }
+
     protected function casts(): array
     {
         return ['start_date' => 'date'];

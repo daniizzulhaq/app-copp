@@ -15,10 +15,17 @@ class ROIObligationService
 {
     public function accrue(SimulationScenario $s, CarbonInterface $through): int
     {
+        if ($s->status === 'archived') {
+            return 0;
+        }
+        if ($s->usesTurnoverRoi()) {
+            return app(TurnoverRoiService::class)->accrue($s, $through);
+        }
+
         return DB::transaction(function () use ($s, $through) {
             SimulationScenario::whereKey($s->id)->lockForUpdate()->firstOrFail();
             $created = 0;
-            Investment::where('simulation_scenario_id', $s->id)->whereIn('status', ['active', 'defaulted', 'completed'])->whereDate('starts_at', '<', $through)->each(function ($i) use ($s, $through, &$created) {
+            Investment::where('simulation_scenario_id', $s->id)->where('roi_method', 'fixed')->whereIn('status', ['active', 'defaulted', 'completed'])->whereDate('starts_at', '<', $through)->each(function ($i) use ($s, $through, &$created) {
                 $elapsed = min($i->duration_days, (int) $i->starts_at->diffInDays($through));
                 $frequency = $s->isLocal() ? 1 : $i->payment_frequency_days;
                 $lastDue = $i->obligations()->max('due_date');

@@ -16,7 +16,7 @@ class DashboardService
     {
         $i = Investment::where('simulation_scenario_id', $s->id)->when($user, fn ($q) => $q->where('user_id', $user));
         $o = RoiObligation::whereHas('investment', fn ($q) => $q->where('simulation_scenario_id', $s->id)->when($user, fn ($q) => $q->where('user_id', $user)));
-        $promised = (int) (clone $i)->selectRaw('COALESCE(SUM(LEAST(FLOOR(principal * daily_rate_bps * duration_days / 10000), COALESCE(daily_roi_cap * duration_days, FLOOR(principal * daily_rate_bps * duration_days / 10000)), COALESCE(FLOOR(principal * total_roi_bps / 10000), FLOOR(principal * daily_rate_bps * duration_days / 10000)))),0) AS total')->value('total');
+        $promised = (int) (clone $i)->selectRaw("COALESCE(SUM(CASE WHEN roi_method = 'turnover' THEN FLOOR(principal * total_roi_bps / 10000) ELSE LEAST(FLOOR(principal * daily_rate_bps * duration_days / 10000), COALESCE(daily_roi_cap * duration_days, FLOOR(principal * daily_rate_bps * duration_days / 10000)), COALESCE(FLOOR(principal * total_roi_bps / 10000), FLOOR(principal * daily_rate_bps * duration_days / 10000))) END),0) AS total")->value('total');
         $out = (int) (clone $o)->selectRaw('COALESCE(SUM(amount-paid_amount-expired_amount),0) AS total')->value('total');
         $principalOutstanding = app(PrincipalReturnService::class)->outstanding($s, app(WorkspaceClock::class)->date($s)->toDateString(), $user);
         $base = LedgerEntry::query()->join('ledger_transactions AS t', 't.id', '=', 'ledger_entries.ledger_transaction_id')->join('ledger_accounts AS a', 'a.id', '=', 'ledger_entries.ledger_account_id')

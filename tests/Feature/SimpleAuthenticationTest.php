@@ -6,7 +6,9 @@ use App\Models\SimulationScenario;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Notifications\SimulationNotification;
+use App\Services\WalletService;
 use Carbon\Carbon;
+use Database\Seeders\TestMemberSeeder;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
@@ -35,6 +37,24 @@ class SimpleAuthenticationTest extends TestCase
             'name' => 'Member Baru', 'email' => 'new-member@example.test',
             'password' => 'MemberPass123', 'password_confirmation' => 'MemberPass123',
         ], $overrides);
+    }
+
+    public function test_seeded_testing_member_is_unique_can_log_in_and_has_no_admin_access(): void
+    {
+        $this->seed(TestMemberSeeder::class);
+        $member = User::where('email', 'tester@copp.test')->firstOrFail();
+        $this->seed(TestMemberSeeder::class);
+        $this->assertSame(1, User::where('email', 'tester@copp.test')->count());
+        $this->assertTrue($member->active);
+        $this->assertTrue($member->hasRole('member'));
+        $this->assertFalse($member->isStaff());
+        $this->assertTrue(Hash::check('MemberTest123', $member->password));
+        $this->post('/login', ['email' => 'membertest', 'password' => 'MemberTest123'])
+            ->assertSessionHasNoErrors()->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($member);
+        $this->get('/dashboard')->assertOk();
+        $this->get('/settings')->assertForbidden();
+        $this->assertSame(0, app(WalletService::class)->get($member, $this->workspace)->balance());
     }
 
     public function test_registration_without_referral_logs_in_and_can_immediately_use_member_features(): void

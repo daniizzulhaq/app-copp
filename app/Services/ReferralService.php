@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Models\Referral;
+use App\Models\SystemSetting;
 use App\Models\User;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ReferralService
 {
@@ -20,8 +21,8 @@ class ReferralService
         }
         DB::transaction(function () use ($user, $referrer) {
             // Serialize network changes so two concurrent attachments cannot create a cycle.
-            \App\Models\SystemSetting::firstOrCreate(['key' => 'copp_network_lock'], ['value' => '1']);
-            \App\Models\SystemSetting::whereKey('copp_network_lock')->lockForUpdate()->firstOrFail();
+            SystemSetting::firstOrCreate(['key' => 'copp_network_lock'], ['value' => '1']);
+            SystemSetting::whereKey('copp_network_lock')->lockForUpdate()->firstOrFail();
             $current = $referrer->id;
             $seen = [$user->id];
             while ($current) {
@@ -34,7 +35,7 @@ class ReferralService
             $referral = Referral::firstOrCreate(['referred_id' => $user->id], ['referrer_id' => $referrer->id, 'points' => 0]);
             if ($referral->wasRecentlyCreated) {
                 app(AuditService::class)->record('referral.attached', $user, null, ['referrer_id' => $referrer->id]);
-                app(MemberBonusService::class)->registration($referrer);
+                app(MemberBonusService::class)->registration($referrer, $user);
             }
         }, 5);
     }

@@ -13,10 +13,17 @@ use Illuminate\Support\Facades\DB;
 
 class MemberBonusService
 {
-    public function registration(User $referrer): void
+    public function registration(User $referrer, ?User $referred = null): void
     {
         $workspace = SimulationScenario::find(SystemSetting::whereKey('local_workspace')->value('value'));
         if ($workspace && $workspace->isLocal() && $workspace->status !== 'archived') {
+            if ($workspace->usesTurnoverRoi()) {
+                if ($referred) {
+                    app(GotongRoyongBonusService::class)->invitation($referrer, $referred, $workspace);
+                }
+
+                return;
+            }
             $this->missions($referrer, $workspace);
         }
     }
@@ -26,6 +33,11 @@ class MemberBonusService
         DB::transaction(function () use ($invoice) {
             $s = SimulationScenario::whereKey($invoice->simulation_scenario_id)->lockForUpdate()->firstOrFail();
             if (! $s->isLocal() || $invoice->status !== 'paid_local') {
+                return;
+            }
+            if ($s->usesTurnoverRoi()) {
+                app(GotongRoyongBonusService::class)->cashback($invoice->user, $s);
+
                 return;
             }
             $current = $invoice->user_id;
@@ -54,6 +66,7 @@ class MemberBonusService
         $ids = Referral::where('referrer_id', $user->id)->select('referred_id');
         $topups = MockPaymentInvoice::where('simulation_scenario_id', $s->id)->whereIn('user_id', $ids)
             ->where('workflow', 'manual_local')->where('status', 'paid_local');
+
         return [
             'registrations' => Referral::where('referrer_id', $user->id)->count(),
             'topups' => (clone $topups)->whereDate('paid_at', today())->distinct()->count('user_id'),
@@ -66,6 +79,9 @@ class MemberBonusService
         DB::transaction(function () use ($user, $scenario) {
             $s = SimulationScenario::whereKey($scenario->id)->lockForUpdate()->firstOrFail();
             if (! $s->isLocal() || $s->status === 'archived' || ! $user->active || $user->is_cohort) {
+                return;
+            }
+            if ($s->usesTurnoverRoi()) {
                 return;
             }
             // Lifetime rewards belong to the account, including across workspaces.

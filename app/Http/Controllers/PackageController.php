@@ -13,8 +13,9 @@ class PackageController extends Controller
 {
     public function index(Request $r)
     {
-        $r->validate(['q' => 'nullable|string|max:100']);
-        $packages = RoiPackage::when($r->q, fn ($q) => $q->where('name', 'like', '%'.$r->q.'%'))->orderBy('minimum_amount')->paginate(12)->withQueryString();
+        $r->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:active,archived']);
+        $packages = RoiPackage::where('active', ! ($r->user()->isStaff() && $r->input('status') === 'archived'))
+            ->when($r->q, fn ($q) => $q->where('name', 'like', '%'.$r->q.'%'))->orderBy('minimum_amount')->paginate(12)->withQueryString();
 
         return view('packages.index', compact('packages'));
     }
@@ -23,7 +24,7 @@ class PackageController extends Controller
     {
         Gate::authorize('manage');
 
-        return view('packages.form', ['package' => new RoiPackage(['active' => true, 'purchase_limit' => 3, 'fixed_amount' => true, 'total_roi_bps' => 21000, 'daily_rate_bps' => 500, 'duration_days' => 42, 'minimum_amount' => 100000])]);
+        return view('packages.form', ['package' => new RoiPackage(['active' => true, 'purchase_limit' => 10, 'fixed_amount' => true, 'total_roi_bps' => 21000, 'daily_rate_bps' => 0, 'duration_days' => 0, 'minimum_amount' => 100000, 'roi_method' => 'turnover', 'roi_shares' => 1])]);
     }
 
     public function store(PackageRequest $r)

@@ -12,6 +12,7 @@ use App\Services\InvestmentService;
 use App\Services\LedgerIntegrityService;
 use App\Services\LedgerService;
 use App\Services\LocalOperationsService;
+use App\Services\ROIObligationService;
 use App\Services\SimulatedDistributionService;
 use App\Services\WalletService;
 use App\Services\WithdrawalSimulationService;
@@ -27,7 +28,9 @@ class DailyRoiClaimsTest extends TestCase
     use DatabaseTransactions;
 
     private SimulationScenario $workspace;
+
     private User $member;
+
     private Investment $investment;
 
     protected function setUp(): void
@@ -165,9 +168,9 @@ class DailyRoiClaimsTest extends TestCase
     {
         $key = (string) Str::uuid();
         $this->actingAs($this->member)->withSession(['scenario_id' => $this->workspace->id])
-            ->post('/withdrawals', ['amount' => 49999, 'method' => 'bank_transfer', 'request_key' => $key])->assertSessionHasErrors('amount');
+            ->post('/withdrawals', ['amount' => 29999, 'method' => 'bank_transfer', 'request_key' => $key])->assertSessionHasErrors('amount');
         $this->expectException(ValidationException::class);
-        app(WithdrawalSimulationService::class)->request($this->member, $this->workspace, 49999, 'bank_transfer', null, $key);
+        app(WithdrawalSimulationService::class)->request($this->member, $this->workspace, 29999, 'bank_transfer', null, $key);
     }
 
     public function test_approved_withdrawal_deducts_ten_percent_and_pays_net_once(): void
@@ -209,7 +212,7 @@ class DailyRoiClaimsTest extends TestCase
         $this->workspace->update(['mode' => 'simulation']);
         app(LedgerService::class)->post($this->workspace, 'simulation-funds', 'seed', 'Simulation initial funds',
             [['cash', 'debit', 100000], ['seed-equity', 'credit', 100000]]);
-        app(\App\Services\ROIObligationService::class)->accrue($this->workspace, today());
+        app(ROIObligationService::class)->accrue($this->workspace, today());
         $before = $this->balance();
         $paid = app(SimulatedDistributionService::class)->pay($this->workspace, today()->toDateString());
         $this->assertSame(700, $paid);

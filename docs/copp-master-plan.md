@@ -1,40 +1,50 @@
-# COPP Luxury
+# COPP Gotong Royong
 
-Master plan ini menggantikan katalog dan data contoh NexaVest sebelumnya.
+Ketentuan aktif sejak perubahan 20 November 2026. Ini menggantikan katalog enam produk dan ROI tetap harian.
 
-| Harga plan | Maks. ROI harian | Maks. total ROI | Periode maksimal |
+| Harga produk | Bagian ROI | Maksimal pembelian per akun | Batas total ROI |
 | --- | --- | --- | --- |
-| Rp100.000 | 5% | 210% | 42 hari |
-| Rp200.000 | 5% | 250% | 50 hari |
-| Rp500.000 | 7% | 300% | 43 hari |
-| Rp1.000.000 | 7% | 350% | 50 hari |
-| Rp2.000.000 | 10% | 350% | 35 hari |
-| Rp5.000.000 | 10% | 400% | 40 hari |
+| Rp100.000 | 1 | 10 | Rp210.000 |
+| Rp1.000.000 | 10 | 10 | Rp2.100.000 |
 
-- Nominal pembelian sama dengan harga plan. Batas tiga pembelian berlaku per produk per akun, termasuk pembelian yang sudah selesai dan lintas workspace.
-- Harga produk ditentukan admin, mulai Rp1; pembelian tidak memiliki batas minimum global Rp100.000. Form mengikuti harga atau minimum produk yang dipilih. Produk dengan nominal tetap harus dibeli sesuai harga, sedangkan produk dengan pilihan mulai dari minimum dapat dibeli sebesar minimum produk atau lebih.
-- Total ROI adalah hasil ROI saja, dengan modal dikembalikan terpisah dan penuh ke saldo web. Periode dihitung dengan pembulatan ke atas dari total ROI / ROI harian. Hari terakhir dipotong sesuai sisa batas total; plan Rp500.000 menghasilkan maksimal Rp1.500.000 ROI, bukan Rp1.505.000.
-- Rate, durasi, batas harian, dan batas total disimpan saat pembelian. Edit produk tidak mengubah portofolio lama.
-- Mekanisme klaim harian tetap berlaku: hari pertama sehari setelah pembelian, harus diklaim pada tanggal jatuh tempo, dan hak yang tidak diklaim hangus. Nilai hangus tetap dihitung dalam batas total ROI.
-- Pengembalian modal diproses saat halaman akun yang memakai workspace diakses (beranda, wallet, portofolio, penarikan, dan transaksi), serta saat persiapan klaim ROI. Cronjob/scheduler tidak diwajibkan untuk alur ini. Jika tidak ada akses, pencatatan dilakukan pada akses berikutnya, menggunakan tanggal server WIB dan jatuh tempo portofolio yang tersimpan. Modal tidak perlu diklaim manual dan tidak dibayar dua kali. Sumber nominal adalah `principal` yang tersimpan saat pembelian; perubahan harga produk tidak mengubah modal yang dikembalikan. Pengembalian lama yang baru terbayar sebagian diselesaikan dengan mengkreditkan sisanya. Klaim ROI tetap manual dan tidak ikut dikreditkan otomatis.
-- Operasional COPP menggunakan saldo web tanpa kas admin. Pembelian tetap memotong saldo tersedia member dan menyimpan modal pada portofolio. Klaim ROI dan pengembalian modal tidak dibatasi kas atau deposit member lain. Contoh modal Rp1.000.000 dikembalikan Rp1.000.000 penuh saat jatuh tempo, terpisah dari ROI. Dashboard, operasional, dan laporan menampilkan saldo wallet serta modal/ROI member.
-- Pencatatan tetap memakai jurnal seimbang dan riwayat permanen. Akun `wallet-offset` hanya menjadi pasangan pencatatan saldo web, dengan saldo yang dapat positif/negatif dan tidak berfungsi sebagai batas pembayaran. Saldo wallet member tetap tidak boleh negatif. Histori lama tidak dihapus atau ditulis ulang. Modul eksperimen terpisah (`mode=simulation`) mempertahankan perilaku simulasinya.
-- Jaringan matahari berarti jumlah referral langsung tidak dibatasi. Komisi berjalan sampai 15 tingkat ke atas tanpa penempatan binary/matrix.
-- Dasar komisi adalah nominal setiap top up manual yang disetujui admin: level 1 sebesar 15%, level 2 sebesar 3%, level 3–5 masing-masing 2%, level 6–15 masing-masing 1%. Top up yang ditolak, dibatalkan, kedaluwarsa, atau belum disetujui tidak dihitung.
-- Misi menggunakan referral langsung. Target registrasi menghitung seluruh akun yang terhubung lewat kode referral, tanpa reset harian. Setiap target undang akun (3 dan 15 akun) dibayar hanya sekali per akun, termasuk lintas workspace. Bonus registrasi lama yang sudah dibayar dengan aturan harian tetap dianggap sudah diklaim; histori dan saldo tidak ditulis ulang.
-- Seluruh target kumulatif: target 15 registrasi membayar Rp5.000 + Rp15.000, masing-masing hanya 1x per akun. Target top up tetap harian (WIB), menghitung akun unik yang top up-nya disetujui hari itu; banyak top up satu akun tetap satu akun. Target 15 akun top up membayar Rp25.000 + Rp100.000, masing-masing sekali per akun per tanggal WIB.
-- Misi omset memakai total top up referral langsung yang disetujui. Target Rp100.000/Rp5.000.000/Rp25.000.000 membayar Rp2.000/Rp20.000/Rp150.000, masing-masing sekali per akun.
-- Bonus otomatis masuk wallet melalui ledger dan dicatat dalam `member_bonuses`. ID transaksi/top up dan periode misi mencegah kredit ganda. Pengkreditan mengikuti model cadangan wallet lokal; tidak melakukan transfer bank otomatis.
-- Minimal WD Rp50.000, admin 10% dari nominal pengajuan. Contoh Rp50.000 dipotong Rp5.000 sehingga nilai transfer Rp45.000.
+Pool harian adalah 60% omzet pembelian produk yang berhasil di workspace aktif, termasuk pembelian ulang. Deposit tidak menambah omzet produk. Tanpa pembelian pada suatu tanggal, ROI tanggal itu nol.
 
-Sumber parameter: `config/copp.php`. Seeder utama menjalankan `RoleSeeder`, `CoppSeeder`, dan `LocalWorkspaceSeeder`; hanya membuat admin Didisaidi, enam produk COPP, dan workspace kosong, tanpa member testing, transaksi, atau skenario contoh.
+Peserta hari itu adalah produk yang aktif sejak pukul 00.00 WIB; produk baru ikut mulai keesokan hari. Bagian dan sisa batas setiap peserta disimpan pada `daily_roi_pools` / `daily_roi_shares`. Ini menjaga pembagi tetap sepanjang hari. Hak produk = pembulatan ke bawah (pool ? bagian produk / total bagian), maksimal sisa batasnya. Contoh omzet Rp1.000.000 menghasilkan pool Rp600.000; pada total 1.000 bagian, satu bagian mendapat Rp600, dan sepuluh bagian mendapat Rp6.000.
 
-Akun awal: nama `Didisaidi`, username `Didisaidi` (tidak membedakan huruf besar/kecil), email login `admin@copp.production`, dengan password awal sesuai `AccountSeeder` yang di-hash di database dan disimpan dalam catatan akun di `storage/app/private/copp-accounts.txt`. `CoppSeeder` memanggil `AccountSeeder` setelah memperbarui paket COPP. Admin yang diarsipkan tidak diaktifkan kembali.
+Klaim tetap manual pada tanggal haknya, sebelum pukul 00.00 WIB. Tambahan omzet di hari yang sama menambah hak; member dapat mengklaim selisihnya tanpa membayar kembali bagian yang sudah diklaim. Jurnal pengakuan dan pembayaran memakai kunci yang berbeda untuk setiap kenaikan. Keterlambatan scheduler tetap mengejar tanggal sebelumnya, lalu menghanguskan hak yang tidak diklaim sesuai aturan klaim lama.
 
-Untuk reset khusus akun di hosting, upload kode terbaru, jalankan `php artisan migrate --force` untuk menambahkan kolom username, lalu `php artisan db:seed --class=AccountSeeder --force` dari folder aplikasi yang berisi `artisan`. Perintah ini mengganti email admin lama `admin@copp.test` menjadi `admin@copp.production` pada ID akun yang sama, menetapkan username Didisaidi, dan mengarsipkan akun testing `member@copp.test` jika masih ada, serta mencabut sesi dan token reset password kedua akun tersebut. Produk, pengaturan, saldo, dan riwayat transaksi dipertahankan; akun member lain tidak berubah. Seeder menolak jika email lama dan baru sudah dipakai dua akun berbeda atau username Didisaidi milik akun lain. Akun member testing tidak dibuat lagi. Tidak perlu menjalankan `migrate:refresh` untuk memperbarui akun.
+Tidak ada persentase keuntungan tetap atau tenggat jumlah hari. Produk berhenti mengikuti pool berikutnya setelah batas total ROI tercapai. Batas dihitung dari seluruh hak yang dialokasikan, termasuk hak yang hangus. Pembulatan rupiah, pool tanpa peserta, dan bagian yang melebihi sisa batas tidak dibagikan ulang. Angka pool admin merupakan anggaran; jumlah hak aktual bisa lebih kecil karena hal tersebut.
 
-Login menerima email atau username melalui kolom yang sama. Username opsional dapat diisi ketika mendaftar, pada profil, atau melalui form member di admin; 3–30 karakter berupa huruf, angka, atau garis bawah. Akun lama yang belum memiliki username tetap dapat login dengan email. Pembatasan percobaan login dihitung per akun dan alamat IP, sehingga bergantian memakai email dan username tidak menghindari batas percobaan.
+Batas total ROI adalah hasil ROI saja, di luar bonus. Pengembalian modal mempertahankan perilaku terpisah: modal penuh kembali ke saldo web ketika batas ROI produk tercapai. Harga, bagian, dan batas disimpan saat pembelian; perubahan katalog tidak mengubah produk yang sudah dibeli.
 
-Penggantian demo lama dilakukan dengan `php scripts/reset-copp-demo.php`. Skrip hanya menerima lingkungan lokal dan akun demo NexaVest yang dikenali, membuat backup SQL lengkap di `storage/app/private/backups`, lalu mengisi database COPP baru. Skrip menolak dijalankan ulang setelah akun COPP tersedia.
+## Bonus
 
-Verifikasi: `php vendor/phpunit/phpunit/phpunit`, `php artisan nexavest:verify-ledger`, `php artisan view:cache`, dan `npm.cmd run build`. Tes memakai database `nexavest_claims_test` yang terpisah dari workspace.
+- Bonus akun baru: Rp5.000, diklaim melalui tombol pada dashboard atau halaman referral, sekali per akun. Akun yang sudah ada sebelum reset tidak otomatis mendapat bonus daftar baru.
+- Undangan: Rp5.000 kepada pengundang untuk setiap akun baru yang mendaftar lewat kodenya, sekali per akun yang diundang.
+- Cashback: Rp10.000 sekali per akun setelah total deposit manual terverifikasi minimal Rp100.000 dan pembelian produk di workspace aktif. Deposit saja atau pembelian saja tidak cukup. Pengujian dan seeder tidak mengkreditkan saldo awal.
+- Setiap aktivasi produk membayar pengundang langsung Rp25.000. Lima upline berikutnya mendapat level 1?5, masing-masing Rp5.000. Nominal tetap tersebut berlaku untuk kedua harga produk. Tidak ada komisi level 6. Cabang referral langsung tidak dibatasi.
+- Komisi berasal dari aktivasi, bukan deposit. Penerima nonaktif atau kohor tidak menerima bonus; tingkatan tetap ditelusuri tanpa memindahkan bonusnya ke penerima lain.
+- Kunci unik per akun, undangan, dan investasi mencegah bonus ganda saat retry. Bonus masuk wallet melalui jurnal seimbang dan dicatat di `member_bonuses`.
+- Minimal WD Rp30.000, admin 10%. Pengajuan Rp30.000 menghasilkan transfer bersih Rp27.000. WD tetap melalui persetujuan admin dan mensyaratkan pembelian produk.
+
+## Penerapan dan reset
+
+Jalankan dari folder proyek:
+
+```bash
+php artisan migrate --force
+php artisan copp:activate-plan --reset-members
+php artisan optimize:clear
+```
+
+Perintah aktivasi membuat backup SQL penuh sebelum reset. Akun, password, dan jaringan referral dipertahankan. Seluruh workspace lokal lama diarsipkan dan workspace baru dimulai tanpa saldo atau produk, sehingga riwayat lama tetap dapat diperiksa admin. Limit pembelian plan baru dihitung per harga produk dalam workspace aktif. Pengulangan perintah setelah plan aktif tidak mereset ulang saldo.
+
+`migrate:fresh --seed` tetap merupakan reset database penuh: seluruh akun dan riwayat dihapus, kemudian dibuat admin, dua produk, workspace baru, dan satu akun member testing. Tidak diperlukan untuk menerapkan perubahan ini pada database yang sudah berisi akun.
+
+Seeder katalog terpisah `ProductPlanSeeder` tidak mengubah password admin. Seeder utama menjalankan `CoppSeeder` (katalog + akun admin), `LocalWorkspaceSeeder`, dan `TestMemberSeeder`. Produk lain diarsipkan. Member hanya melihat katalog aktif.
+
+Admin: username `didisaidi`, email `admin@copp.production`, password awal `admin123`. Member testing: username `membertest`, email `tester@copp.test`, password `MemberTest123`. Seeder akun menetapkan ulang password akun terkait; aktivasi plan tidak menjalankan seeder akun.
+
+Perilaku ROI tetap dan bonus lama dipertahankan untuk pengujian serta pembacaan workspace berlabel `legacy`; workspace lama yang diarsipkan tidak melanjutkan akrual atau klaim.
+
+Verifikasi: `php vendor/phpunit/phpunit/phpunit`, `php artisan nexavest:verify-ledger`, `php artisan view:cache`, dan `npm.cmd run build`. Tes menggunakan database `nexavest_claims_test` yang terpisah dari database aplikasi.
