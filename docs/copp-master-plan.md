@@ -23,6 +23,7 @@ Batas penerimaan produk adalah Rp210.000 di luar bonus. Setelah batas alokasi te
 - Cashback: Rp10.000 sekali per akun setelah pembelian produk pertama yang berhasil di workspace aktif. Tidak dibayar ulang pada pembelian berikutnya. Pengujian dan seeder tidak mengkreditkan saldo awal.
 - Pengundang langsung adalah level 1 dan menerima 25% nominal pembelian (Rp25.000 untuk paket Rp100.000). Empat upline berikutnya adalah level 2?5, masing-masing Rp5.000 sesuai ketentuan sebelumnya. Jaringan berhenti setelah lima upline total; level 6 tidak menerima komisi. Cabang referral langsung tidak dibatasi.
 - Komisi berasal dari aktivasi, bukan deposit. Penerima nonaktif atau kohor tidak menerima bonus; tingkatan tetap ditelusuri tanpa memindahkan bonusnya ke penerima lain.
+- Bonus jaringan dibayar setiap pembelian berhasil oleh member yang sama, termasuk pembelian menggunakan saldo pemberian admin. Tiga pembelian Rp100.000 membayar total Rp75.000 ke level 1 dan Rp15.000 ke masing-masing level 2 sampai 5. Setiap bonus baru mencantumkan nomor pembelian pada riwayat agar dapat dicocokkan satu per satu.
 - Kunci unik per akun, undangan, dan investasi mencegah bonus ganda saat retry. Bonus masuk wallet melalui jurnal seimbang dan dicatat di `member_bonuses`.
 - Minimal WD Rp30.000, admin 10%. Pengajuan Rp30.000 menghasilkan transfer bersih Rp27.000. WD tetap melalui persetujuan admin dan mensyaratkan pembelian produk.
 

@@ -95,6 +95,68 @@ class SingleProductPlanTest extends TestCase
         $this->actingAs($buyer)->get('/referrals')->assertOk()->assertSee('25%')->assertSee('Level 5')->assertDontSee('Level 6');
     }
 
+    public function test_three_purchases_pay_every_network_level_three_times_even_without_a_deposit_invoice(): void
+    {
+        $chain = [$this->member()];
+        for ($n = 1; $n <= 6; $n++) {
+            $chain[] = $this->member();
+            Referral::create(['referrer_id' => $chain[$n - 1]->id, 'referred_id' => $chain[$n]->id, 'points' => 0]);
+        }
+        $buyer = $chain[6];
+        $wallets = app(WalletService::class);
+        $wallets->creditDeposit($buyer, $this->workspace, 300000, 'three-purchases:'.$buyer->id);
+        $package = RoiPackage::where('active', true)->firstOrFail();
+        $service = app(InvestmentService::class);
+        $investments = [];
+        for ($purchase = 1; $purchase <= 3; $purchase++) {
+            $key = (string) Str::uuid();
+            $investment = $service->open($buyer, $this->workspace, $package, 100000, $key);
+            $investments[] = $investment;
+            // Retrying the same purchase or bonus processing must not pay it twice.
+            $this->assertSame($investment->id, $service->open($buyer, $this->workspace, $package, 100000, $key)->id);
+            app(GotongRoyongBonusService::class)->activation($investment);
+
+            $report = app(ProductTurnoverService::class)->report($this->workspace, today()->toDateString(), today()->toDateString());
+            $this->assertSame($purchase * 100000, $report['gross']);
+            $this->assertSame($purchase * 25000, $report['roi']);
+            $this->assertSame($purchase, $report['today']->purchase_count);
+            $this->assertSame($purchase * 100000, $report['today']->gross_amount);
+            $this->assertSame($purchase * 25000, $report['today']->roi_amount);
+
+            for ($level = 1; $level <= 5; $level++) {
+                $upline = $chain[6 - $level];
+                $amount = $level === 1 ? 25000 : 5000;
+                $bonuses = MemberBonus::where('user_id', $upline->id)->where('kind', 'referral_bonus');
+                $this->assertSame($purchase, (clone $bonuses)->count());
+                $this->assertSame($purchase * $amount, (int) $bonuses->sum('amount'));
+                $this->assertSame($purchase * $amount, $wallets->get($upline, $this->workspace)->balance());
+            }
+        }
+
+        // An unaffordable fourth purchase cannot create any additional commission.
+        try {
+            $service->open($buyer, $this->workspace, $package, 100000, (string) Str::uuid());
+            $this->fail('A purchase without enough balance must fail.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('amount', $exception->errors());
+        }
+        $this->assertSame(3, $buyer->investments()->count());
+        $report = app(ProductTurnoverService::class)->report($this->workspace, today()->toDateString(), today()->toDateString());
+        $this->assertSame(300000, $report['gross']);
+        $this->assertSame(75000, $report['roi']);
+        $this->assertSame(3, $report['today']->purchase_count);
+        $this->assertSame(15, MemberBonus::where('simulation_scenario_id', $this->workspace->id)->where('kind', 'referral_bonus')->count());
+        $this->assertSame(0, MemberBonus::where('user_id', $chain[0]->id)->count());
+        $this->assertSame(0, MockPaymentInvoice::where('user_id', $buyer->id)->count());
+        $this->assertSame(10000, $wallets->get($buyer, $this->workspace)->balance());
+        $this->assertSame(1, MemberBonus::where('bonus_key', 'cashback:'.$buyer->id.':once')->count());
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
+        $page = $this->actingAs($chain[5])->get('/referrals')->assertOk()->assertSee('Rp75.000');
+        foreach ($investments as $investment) {
+            $page->assertSee($investment->number);
+        }
+    }
+
     public function test_one_hundred_thousand_turnover_allocates_twenty_five_thousand_to_active_products(): void
     {
         $package = RoiPackage::where('active', true)->firstOrFail();

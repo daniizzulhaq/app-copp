@@ -64,7 +64,7 @@ class GotongRoyongBonusService
                 $seen[] = $parentId;
                 if ($parent = User::find($parentId)) {
                     $this->award($parent, $s, 'activation:'.$investment->id.':depth:'.$depth, 'referral_bonus',
-                        $depth === 0 ? 'Bonus referral 25% (level 1)' : 'Bonus aktivasi level '.($depth + 1),
+                        ($depth === 0 ? 'Bonus referral 25% (level 1)' : 'Bonus aktivasi level '.($depth + 1)).' - '.$investment->number,
                         $depth === 0 ? Money::rate($investment->principal, config('copp.activation_referral_bps')) : config('copp.activation_level_bonus'));
                 }
                 $current = $parentId;
