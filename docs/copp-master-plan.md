@@ -37,6 +37,10 @@ php artisan db:seed --class=ProductPlanSeeder --force
 php artisan optimize:clear
 ```
 
+Untuk perbaikan tampilan klaim, unggah juga hasil `npm run build` di `public/build` beserta view dan JavaScript terbaru. Kartu klaim berada di bawah saldo, tetap menampilkan status ketika nominal belum tersedia atau sudah diklaim, dan memuat ulang hak harian saat tanggal aplikasi berganti atau tab lama dibuka kembali. Tombol **Perbarui klaim** juga memuat ulang data dari server. Rumus pool dan bonus tetap mengikuti ketentuan di atas.
+
+Jika klaim belum tampil di hosting, jalankan `php artisan copp:roi-check USERNAME` (atau email member). Perintah ini membaca waktu aplikasi, plan workspace, omzet hari ini, produk, dan hak klaim tersimpan, tanpa mengubah saldo atau hak klaim. Pastikan `APP_TIMEZONE=Asia/Jakarta`; setelah unggah jalankan `php artisan optimize:clear` untuk membersihkan cache view dan konfigurasi lama.
+
 Penerapan aturan final tidak memerlukan reset saldo atau akun. Backup SQL dibuat sebelum perubahan skema. Perintah reset awal `copp:activate-plan --reset-members` membuat backup SQL penuh sebelum reset. Akun, password, dan jaringan referral dipertahankan. Seluruh workspace lokal lama diarsipkan dan workspace baru dimulai tanpa saldo atau produk, sehingga riwayat lama tetap dapat diperiksa admin. Limit pembelian plan baru dihitung per harga produk dalam workspace aktif. Pengulangan perintah setelah plan aktif tidak mereset ulang saldo.
 
 `migrate:fresh --seed` tetap merupakan reset database penuh: seluruh akun dan riwayat dihapus, kemudian dibuat admin, satu produk, workspace baru, dan satu akun member testing. Tidak diperlukan untuk menerapkan perubahan ini pada database yang sudah berisi akun.

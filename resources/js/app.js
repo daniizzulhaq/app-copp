@@ -3,6 +3,9 @@ import '../css/member.css';
 import '../css/copp.css';
 import Alpine from 'alpinejs';
 import Chart from 'chart.js/auto';
+import { initDailyRoiRefresh } from './daily-roi-refresh';
+
+initDailyRoiRefresh();
 if (!document.documentElement.hasAttribute('data-livewire-enabled')) {
     window.Alpine = Alpine;
     Alpine.start();

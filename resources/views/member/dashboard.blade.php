@@ -12,6 +12,8 @@
     <svg class="member-card-art" viewBox="0 0 200 220" fill="none" aria-hidden="true"><path d="m25 220 80-82 45 18 70-80M-10 180l80-82 45 18 70-80M35 300l80-82 45 18 70-80" stroke="currentColor" stroke-width="26"/></svg>
 </section>
 
+@include('member.roi-claims')
+
 <nav class="member-quick-actions" aria-label="Akses cepat transaksi">
     @foreach([['plus','Deposit','/payments','mint'],['up','Tarik saldo','/withdrawals','blue'],['chart','Portofolio','/investments','violet'],['network','Referral','/referrals','amber']] as [$icon,$label,$url,$color])<a href="{{ $url }}"><span class="{{ $color }}"><x-icon :name="$icon"/></span><b>{{ $label }}</b></a>@endforeach
 </nav>
@@ -20,7 +22,6 @@
 
 @include('member.registration-bonus')
 @include('components.withdrawal-activity')
-@include('member.roi-claims')
 
 @if($metrics['outstanding'] > 0)
     <a class="member-risk-note" href="/investments"><x-icon name="shield"/><div><strong>Ada ROI atau modal belum diselesaikan</strong><p>{{ \App\Support\Money::rupiah($metrics['outstanding']) }} belum dibayar. Periksa portofolio Anda.</p></div><x-icon name="arrow"/></a>
