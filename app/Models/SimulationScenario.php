@@ -15,12 +15,17 @@ class SimulationScenario extends Record
 
     public function usesTurnoverRoi(): bool
     {
-        return $this->isLocal() && $this->plan_version === 'turnover_v1';
+        return $this->isLocal() && in_array($this->plan_version, ['turnover_v1', 'turnover_v2'], true);
+    }
+
+    public function usesNextDayTurnoverRoi(): bool
+    {
+        return $this->isLocal() && $this->plan_version === 'turnover_v2';
     }
 
     protected function casts(): array
     {
-        return ['start_date' => 'date'];
+        return ['start_date' => 'date', 'roi_claims_start_date' => 'date'];
     }
 
     public function runs()

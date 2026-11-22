@@ -51,7 +51,7 @@ return [
         'judul_1' => 'Misi member',
         'isi_1' => 'Klaim bonus daftar Rp5.000 sekali. Undang satu teman mendaftar: Rp5.000 per teman. Deposit terverifikasi dan aktivasi produk: cashback Rp10.000 sekali per akun.',
         'judul_2' => 'ROI harian',
-        'isi_2' => 'Pool 25% omzet dibagi menurut bagian produk aktif sejak awal hari. Produk baru ikut mulai besok. Omzet nol, ROI nol. Tambahan omzet hari ini bisa diklaim lagi.',
+        'isi_2' => 'Omzet pembelian produk hari ini untuk profit besok. Sebanyak 25% omzet dibagi rata ke jumlah produk aktif. Contoh: omzet Rp1.000.000 dibagi 1.000 produk aktif menghasilkan Rp250 per produk besok. Profit berubah setiap hari; omzet ROI nol berarti profit nol.',
         'judul_3' => 'Bonus jaringan',
         'isi_3' => 'Pengundang langsung Rp25.000 per aktivasi. Lima upline berikutnya menerima bonus level 1?5, masing-masing Rp5.000 per aktivasi.',
         'catatan' => 'Minimal WD Rp30.000, admin 10%. Batas ROI 210% di luar bonus; tanpa pengembalian modal tambahan.',

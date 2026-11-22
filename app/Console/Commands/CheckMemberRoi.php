@@ -32,9 +32,9 @@ class CheckMemberRoi extends Command
             return self::FAILURE;
         }
 
-        $sourceDate = today();
+        $sourceDate = $workspace->usesNextDayTurnoverRoi() ? today()->subDay() : today();
         $day = DailyProductTurnover::where('simulation_scenario_id', $workspace->id)->whereDate('period_date', $sourceDate)->first();
-        $pool = DB::table('daily_roi_pools')->where('simulation_scenario_id', $workspace->id)
+        $pool = DB::table($workspace->usesNextDayTurnoverRoi() ? 'daily_roi_claim_pools' : 'daily_roi_pools')->where('simulation_scenario_id', $workspace->id)
             ->whereDate('period_date', $sourceDate)->first();
         $this->table(['Pemeriksaan', 'Nilai'], [
             ['Waktu aplikasi', now()->format('Y-m-d H:i:s').' '.config('app.timezone')],
@@ -44,7 +44,8 @@ class CheckMemberRoi extends Command
             ['Tanggal sumber omzet', $sourceDate->toDateString()],
             ['Omzet sumber', Money::rupiah($day?->gross_amount ?? 0)],
             ['Anggaran ROI dari omzet sumber', Money::rupiah($day?->roi_amount ?? 0)],
-            ['Bagian peserta tersimpan', $pool?->total_shares ?? 0],
+            ['Sudah dibayar pada plan lama', Money::rupiah($pool->legacy_paid_amount ?? 0)],
+            [$workspace->usesNextDayTurnoverRoi() ? 'Jumlah produk peserta tersimpan' : 'Bagian peserta tersimpan', $pool?->total_shares ?? 0],
         ]);
 
         $investments = $member->investments()->where('simulation_scenario_id', $workspace->id)
@@ -63,7 +64,9 @@ class CheckMemberRoi extends Command
             $this->warn('Plan workspace tidak cocok: produk turnover berada pada workspace legacy. Akrual dan bonus turnover tidak berjalan.');
         }
         if ($workspace->usesTurnoverRoi() && ! $day?->roi_amount) {
-            $this->warn('Tidak ada pool ROI hari ini. Kode saat ini memakai omzet hari berjalan; omzet kemarin tidak dibawa ke hari ini.');
+            $this->warn($workspace->usesNextDayTurnoverRoi()
+                ? 'Tidak ada omzet pembelian produk kemarin; tidak ada tambahan pool untuk klaim hari ini.'
+                : 'Tidak ada pool ROI hari ini. Kode saat ini memakai omzet hari berjalan; omzet kemarin tidak dibawa ke hari ini.');
         }
         if ($investments->isEmpty()) {
             $this->warn('Tidak ada pembelian produk akun ini pada workspace tersebut.');

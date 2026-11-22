@@ -21,7 +21,7 @@ class LocalWorkspaceSeeder extends Seeder
             }
             $workspace = SimulationScenario::create([
                 'name' => 'COPP Luxury', 'description' => 'Sistem jaringan matahari, produk ROI, bonus referral, dan misi member COPP.',
-                'mode' => 'local', 'plan_version' => 'turnover_v1', 'start_date' => today(), 'status' => 'running',
+                'mode' => 'local', 'plan_version' => 'turnover_v2', 'start_date' => today(), 'roi_claims_start_date' => today(), 'status' => 'running',
                 'initial_members' => 0, 'daily_new_members' => 0, 'growth_bps' => 0, 'decline_bps' => 0, 'decline_after_day' => 0,
                 'average_deposit' => 0, 'daily_rate_bps' => 0, 'duration_days' => 0, 'payment_frequency_days' => 1,
                 'withdrawal_bps' => 0, 'initial_cash' => 0, 'current_day' => 0, 'participant_count' => 0,

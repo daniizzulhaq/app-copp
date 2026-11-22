@@ -53,7 +53,8 @@ class DailyRoiClaimService
             $total = 0;
             foreach ($items as $obligation) {
                 $amount = $obligation->remaining();
-                $ledger->post($s, 'roi-expired:'.$obligation->id, 'roi_expired', 'ROI harian tidak diklaim dan hangus',
+                $expiryKey = 'roi-expired:'.$obligation->id.($obligation->expired_amount > 0 ? ':'.$obligation->expired_amount : '');
+                $ledger->post($s, $expiryKey, 'roi_expired', 'ROI harian tidak diklaim dan hangus',
                     [['roi-payable', 'debit', $amount], ['roi-forfeited', 'credit', $amount]], $obligation->investment->user_id, today()->toDateString());
                 $obligation->update(['expired_amount' => $obligation->expired_amount + $amount, 'expired_at' => now(), 'status' => 'expired']);
                 $total += $amount;

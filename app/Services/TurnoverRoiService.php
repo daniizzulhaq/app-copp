@@ -15,6 +15,9 @@ class TurnoverRoiService
     {
         return DB::transaction(function () use ($scenario, $through) {
             $s = SimulationScenario::whereKey($scenario->id)->lockForUpdate()->firstOrFail();
+            if ($s->usesNextDayTurnoverRoi()) {
+                return app(NextDayTurnoverRoiService::class)->accrue($s, $through);
+            }
             if (! $s->usesTurnoverRoi() || $s->status === 'archived') {
                 return 0;
             }
