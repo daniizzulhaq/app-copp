@@ -1,6 +1,6 @@
 <section class="panel padded-panel"><h2>Misi member</h2><div class="package-grid copp-mission-grid">
 <article class="package-card"><h3>Bonus daftar</h3><strong>Rp5.000</strong><p>Diklaim sekali oleh akun yang baru mendaftar pada plan aktif.</p></article>
-<article class="package-card"><h3>Undang teman mendaftar</h3><strong>Rp5.000 per teman</strong><p>Otomatis masuk saat teman baru mendaftar menggunakan kode referral Anda.</p></article>
+<article class="package-card"><h3>Undang teman mendaftar</h3><strong>Rp5.000 sekali per akun</strong><p>Otomatis masuk sekali saat berhasil mengundang satu teman baru menggunakan kode referral Anda. Undangan berikutnya tidak mendapat bonus misi lagi.</p></article>
 <article class="package-card"><h3>Cashback aktivasi</h3><strong>Rp10.000</strong><p>Sekali per akun saat pembelian produk pertama.</p></article>
 </div></section>
 @include('member.registration-bonus')

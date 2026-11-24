@@ -49,7 +49,7 @@ return [
         'judul' => 'Master plan COPP',
         'deskripsi' => 'Paket Rp100.000, satu bagian ROI, maksimal Rp210.000 lalu selesai.',
         'judul_1' => 'Misi member',
-        'isi_1' => 'Klaim bonus daftar Rp5.000 sekali. Undang satu teman mendaftar: Rp5.000 per teman. Deposit terverifikasi dan aktivasi produk: cashback Rp10.000 sekali per akun.',
+        'isi_1' => 'Klaim bonus daftar Rp5.000 sekali. Bonus misi undang satu teman mendaftar Rp5.000 hanya sekali per akun pengundang. Undangan berikutnya tidak mendapat bonus misi lagi. Deposit terverifikasi dan aktivasi produk: cashback Rp10.000 sekali per akun.',
         'judul_2' => 'ROI harian',
         'isi_2' => 'Omzet pembelian produk hari ini untuk profit besok. Sebanyak 25% omzet dibagi rata ke jumlah produk aktif. Contoh: omzet Rp1.000.000 dibagi 1.000 produk aktif menghasilkan Rp250 per produk besok. Profit berubah setiap hari; omzet ROI nol berarti profit nol.',
         'judul_3' => 'Bonus jaringan',

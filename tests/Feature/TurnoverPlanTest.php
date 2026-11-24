@@ -13,6 +13,7 @@ use App\Services\DailyRoiClaimService;
 use App\Services\GotongRoyongBonusService;
 use App\Services\InvestmentService;
 use App\Services\LedgerIntegrityService;
+use App\Services\LedgerService;
 use App\Services\ManualDepositService;
 use App\Services\MemberPlanResetService;
 use App\Services\ReferralService;
@@ -229,7 +230,7 @@ class TurnoverPlanTest extends TestCase
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
     }
 
-    public function test_signup_and_each_invitation_pay_once_with_no_old_mission_rewards(): void
+    public function test_signup_and_invitation_mission_pay_once_per_account(): void
     {
         $parent = $this->member();
         $this->travelTo(now()->addMinute());
@@ -246,10 +247,54 @@ class TurnoverPlanTest extends TestCase
         app(ReferralService::class)->attach($child, $parent->referral_code);
         $other = $this->member();
         app(ReferralService::class)->attach($other, $parent->referral_code);
-        $this->assertSame(10000, app(WalletService::class)->get($parent, $this->workspace)->balance());
-        $this->assertSame(3, MemberBonus::where('simulation_scenario_id', $this->workspace->id)->count());
-        $this->get('/referrals')->assertOk()->assertSee('Level 5')->assertDontSee('Level 6');
+        $this->assertSame(5000, app(WalletService::class)->get($parent, $this->workspace)->balance());
+        $this->assertSame(2, MemberBonus::where('simulation_scenario_id', $this->workspace->id)->count());
+        $this->get('/referrals')->assertOk()->assertSee('Level 5')->assertDontSee('Level 6')
+            ->assertSee('Undangan berikutnya tidak mendapat bonus misi lagi.')->assertDontSee('Rp5.000 per teman');
         $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
+
+        $this->travelTo(now()->addDay());
+        $nextWorkspace = SimulationScenario::factory()->create([
+            'mode' => 'local', 'plan_version' => 'turnover_v2', 'status' => 'running', 'start_date' => today(),
+        ]);
+        SystemSetting::whereKey('local_workspace')->update(['value' => (string) $nextWorkspace->id]);
+        $third = $this->member();
+        app(ReferralService::class)->attach($third, $parent->referral_code);
+        app(GotongRoyongBonusService::class)->invitation($parent, $third, $nextWorkspace);
+        $this->assertSame(0, app(WalletService::class)->get($parent, $nextWorkspace)->balance());
+        $this->assertSame(1, MemberBonus::where('user_id', $parent->id)->count());
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($nextWorkspace));
+    }
+
+    public function test_old_invitation_rewards_already_fulfill_the_once_per_inviter_mission(): void
+    {
+        $parent = $this->member();
+        foreach (range(1, 2) as $n) {
+            $child = $this->member();
+            Referral::create(['referrer_id' => $parent->id, 'referred_id' => $child->id, 'points' => 0]);
+            app(WalletService::class)->get($parent, $this->workspace);
+            $key = 'invite:'.$child->id.':once';
+            $tx = app(LedgerService::class)->post($this->workspace, 'bonus:'.$key, 'mission_bonus', 'Bonus undang teman mendaftar',
+                [['reserve', 'debit', 5000], ['wallet:'.$parent->id.':available', 'credit', 5000]], $parent->id);
+            MemberBonus::create(['user_id' => $parent->id, 'simulation_scenario_id' => $this->workspace->id,
+                'bonus_key' => $key, 'kind' => 'mission_bonus', 'description' => 'Bonus undang teman mendaftar',
+                'amount' => 5000, 'ledger_transaction_id' => $tx->id]);
+        }
+
+        $this->travelTo(now()->addDay());
+        $nextWorkspace = SimulationScenario::factory()->create([
+            'mode' => 'local', 'plan_version' => 'turnover_v2', 'status' => 'running', 'start_date' => today(),
+        ]);
+        SystemSetting::whereKey('local_workspace')->update(['value' => (string) $nextWorkspace->id]);
+        $newChild = $this->member();
+        app(ReferralService::class)->attach($newChild, $parent->referral_code);
+        app(GotongRoyongBonusService::class)->invitation($parent, $newChild, $nextWorkspace);
+
+        $this->assertSame(10000, app(WalletService::class)->get($parent, $this->workspace)->balance());
+        $this->assertSame(0, app(WalletService::class)->get($parent, $nextWorkspace)->balance());
+        $this->assertSame(2, MemberBonus::where('user_id', $parent->id)->count());
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($this->workspace));
+        $this->assertSame([], app(LedgerIntegrityService::class)->check($nextWorkspace));
     }
 
     public function test_deposit_alone_has_no_bonus_and_product_commissions_stop_at_five_total_levels(): void

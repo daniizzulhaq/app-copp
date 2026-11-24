@@ -42,7 +42,13 @@ class GotongRoyongBonusService
                 || ! Referral::where('referrer_id', $referrer->id)->where('referred_id', $referred->id)->exists()) {
                 return;
             }
-            $this->award($referrer, $s, 'invite:'.$referred->id.':once', 'mission_bonus', 'Bonus undang teman mendaftar', config('copp.invitation_bonus'));
+            // This reward belongs to the inviter for life, including across workspaces.
+            User::whereKey($referrer->id)->lockForUpdate()->firstOrFail();
+            // Invitations rewarded under the previous per-friend rule also fulfill this mission.
+            if (MemberBonus::where('user_id', $referrer->id)->where('bonus_key', 'like', 'invite:%')->exists()) {
+                return;
+            }
+            $this->award($referrer, $s, 'invitation:'.$referrer->id.':once', 'mission_bonus', 'Bonus undang teman mendaftar', config('copp.invitation_bonus'));
         }, 5);
     }
 
